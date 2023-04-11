@@ -1,0 +1,147 @@
+diff --git a/drivers/net/ethernet/intel/igb/e1000_regs.h b/drivers/net/ethernet/intel/igb/e1000_regs.h
+index eb9f6da9208a..8347d4e062f1 100644
+--- a/drivers/net/ethernet/intel/igb/e1000_regs.h
++++ b/drivers/net/ethernet/intel/igb/e1000_regs.h
+@@ -347,6 +347,23 @@
+ #define E1000_VLVF(_n)         (0x05D00 + (4 * (_n))) /* VLAN VM Filter */
+ #define E1000_VMVIR(_n)        (0x03700 + (4 * (_n)))
+ 
++/* Default values for the transmit IPG register */
++#define DEFAULT_82542_TIPG_IPGT        10
++#define DEFAULT_82543_TIPG_IPGT_FIBER  9
++#define DEFAULT_82543_TIPG_IPGT_COPPER 8
++
++#define E1000_TIPG_IPGT_MASK  0x000003FF
++#define E1000_TIPG_IPGR1_MASK 0x000FFC00
++#define E1000_TIPG_IPGR2_MASK 0x3FF00000
++
++#define DEFAULT_82542_TIPG_IPGR1 2
++#define DEFAULT_82543_TIPG_IPGR1 8
++#define E1000_TIPG_IPGR1_SHIFT  10
++
++#define DEFAULT_82542_TIPG_IPGR2 10
++#define DEFAULT_82543_TIPG_IPGR2 6
++#define E1000_TIPG_IPGR2_SHIFT  20
++
+ struct e1000_hw;
+ 
+ u32 igb_rd32(struct e1000_hw *hw, u32 reg);
+diff --git a/drivers/net/ethernet/intel/igb/igb_hwmon.c b/drivers/net/ethernet/intel/igb/igb_hwmon.c
+index 21a29a0ca7f4..1056dd978c2e 100644
+--- a/drivers/net/ethernet/intel/igb/igb_hwmon.c
++++ b/drivers/net/ethernet/intel/igb/igb_hwmon.c
+@@ -142,10 +142,100 @@ static void igb_sysfs_del_adapter(struct igb_adapter *adapter)
+ {
+ }
+ 
++static ssize_t attr_show(struct device *d, char *buf,
++			 ssize_t(*format) (struct net_device *, char *))
++{
++	ssize_t len;
++
++	/* Synchronize with ioctls that may shut down the device */
++	rtnl_lock();
++	len = (*format) (to_net_dev(d), buf);
++	rtnl_unlock();
++	return len;
++}
++
++static ssize_t attr_store(struct device *d,
++			  const char *buf, size_t len,
++			  ssize_t(*set) (struct net_device *, unsigned int),
++			  unsigned int min_val, unsigned int max_val)
++{
++	ssize_t ret;
++	unsigned int val;
++
++	if (!capable(CAP_NET_ADMIN))
++		return -EPERM;
++
++	ret = kstrtouint(buf, 0, &val);
++	if (ret)
++		return ret;
++	if (val < min_val || val > max_val)
++		return -EINVAL;
++
++	rtnl_lock();
++	ret = (*set) (to_net_dev(d), val);
++	if (!ret)
++		ret = len;
++	rtnl_unlock();
++	return ret;
++}
++
++static ssize_t format_tipg(struct net_device *dev, char *buf)
++{
++	struct igb_adapter *adapter = netdev_priv(dev);
++	struct e1000_hw *hw = &adapter->hw;
++	u32 val;
++	val = rd32(E1000_TIPG) & E1000_TIPG_IPGT_MASK;
++	return sprintf(buf, "%u\n", val);
++}
++
++static ssize_t show_tipg(struct device *d, struct device_attribute *attr,
++			   char *buf)
++{
++	return attr_show(d, buf, format_tipg);
++}
++
++static ssize_t set_tipg(struct net_device *dev, unsigned int val)
++{
++	struct igb_adapter *adapter = netdev_priv(dev);
++	struct e1000_hw *hw = &adapter->hw;
++	u32 reg;
++
++	reg = rd32(E1000_TIPG);
++	reg &= ~E1000_TIPG_IPGT_MASK;
++	dev_dbg(&dev->dev, "setting tipg=%u\n", val);
++	reg |= val;
++	wr32(E1000_TIPG, reg);
++
++	return 0;
++}
++
++static ssize_t store_tipg(struct device *d, struct device_attribute *attr,
++			      const char *buf, size_t len)
++{
++	return attr_store(d, buf, len, set_tipg, 0, 16);
++}
++
++#define IGB_ATTR_RW(name, show_method, store_method) \
++static DEVICE_ATTR(name, 0644, show_method, store_method)
++
++IGB_ATTR_RW(tipg, show_tipg, store_tipg);
++
++static struct attribute *igb_attrs[] = {
++	&dev_attr_tipg.attr,
++	NULL
++};
++
++static const struct attribute_group igb_attr_group = {
++	.attrs = igb_attrs,
++};
++
+ /* called from igb_main.c */
+ void igb_sysfs_exit(struct igb_adapter *adapter)
+ {
+ 	igb_sysfs_del_adapter(adapter);
++	/* XXX it's not hwmon */
++	sysfs_remove_group(&adapter->netdev->dev.kobj,
++			   &igb_attr_group);
+ }
+ 
+ /* called from igb_main.c */
+@@ -157,6 +247,13 @@ int igb_sysfs_init(struct igb_adapter *adapter)
+ 	unsigned int i;
+ 	int rc = 0;
+ 
++	/* XXX it's not hwmon */
++	rc = sysfs_create_group(&adapter->netdev->dev.kobj, &igb_attr_group);
++	if (rc) {
++		dev_err(&adapter->netdev->dev, "cannot create sysfs group\n");
++		goto exit;
++	}
++
+ 	/* If this method isn't defined we don't support thermals */
+ 	if (adapter->hw.mac.ops.init_thermal_sensor_thresh == NULL)
+ 		goto exit;

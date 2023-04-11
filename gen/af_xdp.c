@@ -33,7 +33,7 @@
 #include <sys/resource.h>
 #include <linux/if_link.h>
 #include <bpf/bpf.h>
-#include <bpf/xsk.h>
+#include <xdp/xsk.h>
 #include <bsd/sys/param.h>
 
 #include "af_xdp.h"

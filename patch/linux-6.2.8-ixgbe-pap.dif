@@ -1,0 +1,135 @@
+diff --git a/drivers/net/ethernet/intel/ixgbe/ixgbe_sysfs.c b/drivers/net/ethernet/intel/ixgbe/ixgbe_sysfs.c
+index 204844288c16..499d6b4c2d58 100644
+--- a/drivers/net/ethernet/intel/ixgbe/ixgbe_sysfs.c
++++ b/drivers/net/ethernet/intel/ixgbe/ixgbe_sysfs.c
+@@ -136,10 +136,103 @@ static void ixgbe_sysfs_del_adapter(struct ixgbe_adapter *adapter)
+ {
+ }
+ 
++static ssize_t attr_show(struct device *d, char *buf,
++			 ssize_t(*format) (struct net_device *, char *))
++{
++	ssize_t len;
++
++	/* Synchronize with ioctls that may shut down the device */
++	rtnl_lock();
++	len = (*format) (to_net_dev(d), buf);
++	rtnl_unlock();
++	return len;
++}
++
++static ssize_t attr_store(struct device *d,
++			  const char *buf, size_t len,
++			  ssize_t(*set) (struct net_device *, unsigned int),
++			  unsigned int min_val, unsigned int max_val)
++{
++	ssize_t ret;
++	unsigned int val;
++
++	if (!capable(CAP_NET_ADMIN))
++		return -EPERM;
++
++	ret = kstrtouint(buf, 0, &val);
++	if (ret)
++		return ret;
++	if (val < min_val || val > max_val)
++		return -EINVAL;
++
++	rtnl_lock();
++	ret = (*set) (to_net_dev(d), val);
++	if (!ret)
++		ret = len;
++	rtnl_unlock();
++	return ret;
++}
++
++static ssize_t format_pap(struct net_device *dev, char *buf)
++{
++	struct ixgbe_adapter *adapter = netdev_priv(dev);
++	struct ixgbe_hw *hw = &adapter->hw;
++	u32 val;
++	val = IXGBE_READ_REG(hw, IXGBE_PAP) & IXGBE_PAP_PACE_MASK;
++	val >>= 16;
++	return sprintf(buf, "%u\n", val);
++}
++
++static ssize_t show_pap(struct device *d, struct device_attribute *attr,
++			   char *buf)
++{
++	return attr_show(d, buf, format_pap);
++}
++
++static ssize_t set_pap(struct net_device *dev, unsigned int val)
++{
++	struct ixgbe_adapter *adapter = netdev_priv(dev);
++	struct ixgbe_hw *hw = &adapter->hw;
++	u32 reg;
++
++	if ((val < 0) || ((val > 9) && (val != 15)))
++		return -EINVAL;
++
++	reg = IXGBE_READ_REG(hw, IXGBE_PAP);
++	reg &= ~IXGBE_PAP_PACE_MASK;
++	dev_dbg(&dev->dev, "setting pap=%u\n", val);
++	reg |= val << 16;
++	IXGBE_WRITE_REG(hw, IXGBE_PAP, reg);
++
++	return 0;
++}
++
++static ssize_t store_pap(struct device *d, struct device_attribute *attr,
++			      const char *buf, size_t len)
++{
++	return attr_store(d, buf, len, set_pap, 0, 16);
++}
++
++#define IXGBE_ATTR_RW(name, show_method, store_method) \
++static DEVICE_ATTR(name, 0644, show_method, store_method)
++
++IXGBE_ATTR_RW(pap, show_pap, store_pap);
++
++static struct attribute *ixgbe_attrs[] = {
++	&dev_attr_pap.attr,
++	NULL
++};
++
++static const struct attribute_group ixgbe_attr_group = {
++	.attrs = ixgbe_attrs,
++};
++
+ /* called from ixgbe_main.c */
+ void ixgbe_sysfs_exit(struct ixgbe_adapter *adapter)
+ {
+ 	ixgbe_sysfs_del_adapter(adapter);
++	sysfs_remove_group(&adapter->netdev->dev.kobj,
++			   &ixgbe_attr_group);
+ }
+ 
+ /* called from ixgbe_main.c */
+@@ -149,6 +242,14 @@ int ixgbe_sysfs_init(struct ixgbe_adapter *adapter)
+ 	struct device *hwmon_dev;
+ 	unsigned int i;
+ 	int rc = 0;
++	int err;
++
++	err = sysfs_create_group(&adapter->netdev->dev.kobj,
++				 &ixgbe_attr_group);
++	if (err) {
++		dev_err(&adapter->netdev->dev, "cannot create sysfs group\n");
++		goto exit;
++	}
+ 
+ 	/* If this method isn't defined we don't support thermals */
+ 	if (adapter->hw.mac.ops.init_thermal_sensor_thresh == NULL) {
+diff --git a/drivers/net/ethernet/intel/ixgbe/ixgbe_type.h b/drivers/net/ethernet/intel/ixgbe/ixgbe_type.h
+index 2b00db92b08f..489ed2b89e82 100644
+--- a/drivers/net/ethernet/intel/ixgbe/ixgbe_type.h
++++ b/drivers/net/ethernet/intel/ixgbe/ixgbe_type.h
+@@ -1577,6 +1577,7 @@ enum {
+ 
+ /* PAP bit masks*/
+ #define IXGBE_PAP_TXPAUSECNT_MASK   0x0000FFFF /* Pause counter mask */
++#define IXGBE_PAP_PACE_MASK         0x000F0000 /* Pace bit mask */
+ 
+ /* RMCS Bit Masks */
+ #define IXGBE_RMCS_RRM          0x00000002 /* Receive Recycle Mode enable */
