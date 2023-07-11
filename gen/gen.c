@@ -474,21 +474,20 @@ pktcpy_pppoe(char *dstbuf, char *srcbuf, unsigned int pktsize, uint16_t session,
 void
 touchup_tx_packet(char *buf, int ifno)
 {
+	struct interface *iface = &interface[ifno];
+	struct interface *iface_other = &interface[ifno ^ 1];
 	static unsigned int id;
 	struct seqdata seqdata;
 	uint32_t flowid;
 	const struct address_tuple *tuple;
 	int ipv6;
-	int ifno_another;
 	unsigned int l3offset, l4payloadsize;
 	struct sequence_record *seqrecord;
 
-	ifno_another = ifno ^ 1;
-
-	if (interface[ifno].vlan_id) {
+	if (iface->vlan_id) {
 		l3offset = sizeof(struct ether_vlan_header);
 #ifdef SUPPORT_PPPOE
-	} else if (interface[ifno].pppoe) {
+	} else if (iface->pppoe) {
 		l3offset = sizeof(struct pppoe_l2) + 2;
 #endif
 	} else {
@@ -503,37 +502,37 @@ touchup_tx_packet(char *buf, int ifno)
 		ip4pkt_dst(buf, l3offset, x);
 		ip4pkt_srcport(buf, l3offset, x);
 		ip4pkt_dstport(buf, l3offset, x);
-		ip4pkt_length(buf, l3offset, interface[ifno].pktsize);
+		ip4pkt_length(buf, l3offset, iface->pktsize);
 
 	} else {
-		flowid = addresslist_get_current_tupleid(interface[ifno].adrlist);
+		flowid = addresslist_get_current_tupleid(iface->adrlist);
 		if (flowid >= opt_nflow) {
-			addresslist_set_current_tupleid(interface[ifno].adrlist, 0);
+			addresslist_set_current_tupleid(iface->adrlist, 0);
 			flowid = 0;
 		}
-		tuple = addresslist_get_current_tuple(interface[ifno].adrlist);
-		addresslist_get_tuple_next(interface[ifno].adrlist);
+		tuple = addresslist_get_current_tuple(iface->adrlist);
+		addresslist_get_tuple_next(iface->adrlist);
 
 		if (tuple->saddr.af == AF_INET) {
-			if (interface[ifno].vlan_id) {
+			if (iface->vlan_id) {
 				if (opt_udp) {
-					pktcpy_vlan(buf, pktbuffer_ipv4_udp[ifno], interface[ifno].pktsize + ETHHDRSIZE, interface[ifno].vlan_id);
+					pktcpy_vlan(buf, pktbuffer_ipv4_udp[ifno], iface->pktsize + ETHHDRSIZE, iface->vlan_id);
 				} else {
-					pktcpy_vlan(buf, pktbuffer_ipv4_tcp[ifno], interface[ifno].pktsize + ETHHDRSIZE, interface[ifno].vlan_id);
+					pktcpy_vlan(buf, pktbuffer_ipv4_tcp[ifno], iface->pktsize + ETHHDRSIZE, iface->vlan_id);
 				}
 #ifdef SUPPORT_PPPOE
-			} else if (interface[ifno].pppoe) {
+			} else if (iface->pppoe) {
 				if (opt_udp) {
-					pktcpy_pppoe(buf, pktbuffer_ipv4_udp[ifno], interface[ifno].pktsize + ETHHDRSIZE, interface[ifno].pppoe_sc.session, PPP_IP);
+					pktcpy_pppoe(buf, pktbuffer_ipv4_udp[ifno], iface->pktsize + ETHHDRSIZE, iface->pppoe_sc.session, PPP_IP);
 				} else {
-					pktcpy_pppoe(buf, pktbuffer_ipv4_tcp[ifno], interface[ifno].pktsize + ETHHDRSIZE, interface[ifno].pppoe_sc.session, PPP_IP);
+					pktcpy_pppoe(buf, pktbuffer_ipv4_tcp[ifno], iface->pktsize + ETHHDRSIZE, iface->pppoe_sc.session, PPP_IP);
 				}
 #endif
 			} else {
 				if (opt_udp) {
-					memcpy(buf, pktbuffer_ipv4_udp[ifno], interface[ifno].pktsize + ETHHDRSIZE);
+					memcpy(buf, pktbuffer_ipv4_udp[ifno], iface->pktsize + ETHHDRSIZE);
 				} else {
-					memcpy(buf, pktbuffer_ipv4_tcp[ifno], interface[ifno].pktsize + ETHHDRSIZE);
+					memcpy(buf, pktbuffer_ipv4_tcp[ifno], iface->pktsize + ETHHDRSIZE);
 				}
 			}
 
@@ -542,31 +541,31 @@ touchup_tx_packet(char *buf, int ifno)
 			ip4pkt_srcport(buf, l3offset, tuple->sport);
 			ip4pkt_dstport(buf, l3offset, tuple->dport);
 
-			ip4pkt_length(buf, l3offset, interface[ifno].pktsize);
+			ip4pkt_length(buf, l3offset, iface->pktsize);
 			ip4pkt_id(buf, l3offset, id++);
 			if (opt_fragment)
 				ip4pkt_off(buf, l3offset, 1200 | IP_MF);
 
 			ipv6 = 0;
 		} else {
-			if (interface[ifno].vlan_id) {
+			if (iface->vlan_id) {
 				if (opt_udp)
-					pktcpy_vlan(buf, pktbuffer_ipv6_udp[ifno], interface[ifno].pktsize + ETHHDRSIZE, interface[ifno].vlan_id);
+					pktcpy_vlan(buf, pktbuffer_ipv6_udp[ifno], iface->pktsize + ETHHDRSIZE, iface->vlan_id);
 				else
-					pktcpy_vlan(buf, pktbuffer_ipv6_tcp[ifno], interface[ifno].pktsize + ETHHDRSIZE, interface[ifno].vlan_id);
+					pktcpy_vlan(buf, pktbuffer_ipv6_tcp[ifno], iface->pktsize + ETHHDRSIZE, iface->vlan_id);
 #ifdef SUPPORT_PPPOE
-			} else if (interface[ifno].pppoe) {
+			} else if (iface->pppoe) {
 				if (opt_udp) {
-					pktcpy_pppoe(buf, pktbuffer_ipv6_udp[ifno], interface[ifno].pktsize + ETHHDRSIZE, interface[ifno].pppoe_sc.session, PPP_IPV6);
+					pktcpy_pppoe(buf, pktbuffer_ipv6_udp[ifno], iface->pktsize + ETHHDRSIZE, iface->pppoe_sc.session, PPP_IPV6);
 				} else {
-					pktcpy_pppoe(buf, pktbuffer_ipv6_tcp[ifno], interface[ifno].pktsize + ETHHDRSIZE, interface[ifno].pppoe_sc.session, PPP_IPV6);
+					pktcpy_pppoe(buf, pktbuffer_ipv6_tcp[ifno], iface->pktsize + ETHHDRSIZE, iface->pppoe_sc.session, PPP_IPV6);
 				}
 #endif
 			} else {
 				if (opt_udp)
-					memcpy(buf, pktbuffer_ipv6_udp[ifno], interface[ifno].pktsize + ETHHDRSIZE);
+					memcpy(buf, pktbuffer_ipv6_udp[ifno], iface->pktsize + ETHHDRSIZE);
 				else
-					memcpy(buf, pktbuffer_ipv6_tcp[ifno], interface[ifno].pktsize + ETHHDRSIZE);
+					memcpy(buf, pktbuffer_ipv6_tcp[ifno], iface->pktsize + ETHHDRSIZE);
 			}
 
 			ip6pkt_src(buf, l3offset, &tuple->saddr.a.addr6);
@@ -574,31 +573,31 @@ touchup_tx_packet(char *buf, int ifno)
 			ip6pkt_srcport(buf, l3offset, tuple->sport);
 			ip6pkt_dstport(buf, l3offset, tuple->dport);
 
-			ip6pkt_length(buf, l3offset, interface[ifno].pktsize);
+			ip6pkt_length(buf, l3offset, iface->pktsize);
 
 			ipv6 = 1;
 		}
 
-		if (interface[ifno].gw_l2random)
+		if (iface->gw_l2random)
 			ethpkt_dst(buf, (u_char *)tuple->deaddr.octet);
-		if (interface[ifno_another].gw_l2random)
+		if (iface_other->gw_l2random)
 			ethpkt_src(buf, (u_char *)tuple->seaddr.octet);
 
 		if (ipv6)
-			l4payloadsize = interface[ifno].pktsize - sizeof(struct ip6_hdr);
+			l4payloadsize = iface->pktsize - sizeof(struct ip6_hdr);
 		else
-			l4payloadsize = interface[ifno].pktsize - sizeof(struct ip);
+			l4payloadsize = iface->pktsize - sizeof(struct ip);
 		if (opt_udp)
 			l4payloadsize -= sizeof(struct udphdr);
 		else
 			l4payloadsize -= sizeof(struct tcphdr);
 
 		/* store sequence number, and remember relational info */
-		seqrecord = seqtable_prep(interface[ifno_another].seqtable);
+		seqrecord = seqtable_prep(iface_other->seqtable);
 		seqdata.magic = seq_magic;
 		seqdata.seq = seqrecord->seq;
 		seqrecord->flowid = flowid;
-		seqrecord->flowseq = interface[ifno].sequence_tx_perflow[flowid]++;
+		seqrecord->flowseq = iface->sequence_tx_perflow[flowid]++;
 		seqrecord->ts = currenttime_tx;
 
 		if (ipv6) 
@@ -611,12 +610,13 @@ touchup_tx_packet(char *buf, int ifno)
 int
 packet_generator(char *buf, int ifno)
 {
+	struct interface *iface = &interface[ifno];
 	int vlanadj;
 
-	if (interface[ifno].vlan_id) {
+	if (iface->vlan_id) {
 		vlanadj = 4;
 #ifdef SUPPORT_PPPOE
-	} else if (interface[ifno].pppoe) {
+	} else if (iface->pppoe) {
 		vlanadj = 8;
 #endif
 	} else {
@@ -626,9 +626,9 @@ packet_generator(char *buf, int ifno)
 	touchup_tx_packet(buf, ifno);
 
 	if (opt_debug != NULL)
-		tcpdumpfile_output(debug_tcpdump_fd, buf, interface[ifno].pktsize + ETHHDRSIZE + vlanadj);
+		tcpdumpfile_output(debug_tcpdump_fd, buf, iface->pktsize + ETHHDRSIZE + vlanadj);
 
-	return interface[ifno].pktsize + vlanadj;
+	return iface->pktsize + vlanadj;
 }
 
 int
@@ -706,8 +706,9 @@ write_if_sysfs(const char *ifname, const char *target, unsigned int val)
 static int
 set_ipg(int ifno, unsigned int ipg)
 {
+	struct interface *iface = &interface[ifno];
 #ifdef __linux__
-	const char *ifname = interface[ifno].ifname;
+	const char *ifname = iface->ifname;
 
 	if (ifname == NULL || ifname[0] == '\0')
 		return -1;
@@ -715,8 +716,8 @@ set_ipg(int ifno, unsigned int ipg)
 	return write_if_sysfs(ifname, "tipg", ipg);
 #else
 	char buf[256];
-	const char *drvname = interface[ifno].drvname;
-	unsigned long unit = interface[ifno].unit;
+	const char *drvname = iface->drvname;
+	unsigned long unit = iface->unit;
 
 	if ((strncmp(drvname, "em", IFNAMSIZ) == 0)
 	    || (strncmp(drvname, "igb", IFNAMSIZ) == 0)
@@ -734,8 +735,9 @@ set_ipg(int ifno, unsigned int ipg)
 static int
 set_pap(int ifno, unsigned int pap)
 {
+	struct interface *iface = &interface[ifno];
 #ifdef __linux__
-	const char *ifname = interface[ifno].ifname;
+	const char *ifname = iface->ifname;
 
 	if (ifname == NULL || ifname[0] == '\0')
 		return -1;
@@ -743,8 +745,8 @@ set_pap(int ifno, unsigned int pap)
 	return write_if_sysfs(ifname, "pap", pap);
 #else
 	char buf[256];
-	const char *drvname = interface[ifno].drvname;
-	unsigned long unit = interface[ifno].unit;
+	const char *drvname = iface->drvname;
+	unsigned long unit = iface->unit;
 
 	if (strncmp(drvname, "ix", IFNAMSIZ) == 0) {
 		snprintf(buf, sizeof(buf), "sysctl -q -w dev.%s.%ld.pap=%u > /dev/null", drvname, unit, pap);
@@ -761,9 +763,10 @@ static void
 reset_ipg(int ifno)
 {
 #ifdef IPG_HACK
+	struct interface *iface = &interface[ifno];
 	char buf[256];
-	const char *drvname = interface[ifno].drvname;
-	unsigned long unit = interface[ifno].unit;
+	const char *drvname = iface->drvname;
+	unsigned long unit = iface->unit;
 
 	if (!support_ipg)
 		return;
@@ -771,7 +774,7 @@ reset_ipg(int ifno)
 	if ((strncmp(drvname, "em", IFNAMSIZ) == 0)
 	    || (strncmp(drvname, "igb", IFNAMSIZ) == 0)) {
 #ifdef __linux__
-		snprintf(buf, sizeof(buf), "echo 8 > /sys/class/net/%s/tipg", interface[ifno].ifname);
+		snprintf(buf, sizeof(buf), "echo 8 > /sys/class/net/%s/tipg", iface->ifname);
 #else
 		snprintf(buf, sizeof(buf), "sysctl -q -w dev.%s.%lu.tipg=8 > /dev/null", drvname, unit);
 #endif
@@ -782,7 +785,7 @@ reset_ipg(int ifno)
 
 		/* Try TIPG first */
 #ifdef __linux__
-		snprintf(buf, sizeof(buf), "echo 0 > /sys/class/net/%s/tipg 2>/dev/null", interface[ifno].ifname);
+		snprintf(buf, sizeof(buf), "echo 0 > /sys/class/net/%s/tipg 2>/dev/null", iface->ifname);
 #else
 		snprintf(buf, sizeof(buf), "sysctl -q -w dev.%s.%lu.tipg=0 > /dev/null", drvname, unit);
 #endif
@@ -793,7 +796,7 @@ reset_ipg(int ifno)
 
 		/* If failed, try PAP */
 #ifdef __linux__
-		snprintf(buf, sizeof(buf), "echo 0 > /sys/class/net/%s/pap", interface[ifno].ifname);
+		snprintf(buf, sizeof(buf), "echo 0 > /sys/class/net/%s/pap", iface->ifname);
 #else
 		snprintf(buf, sizeof(buf), "sysctl -q -w dev.%s.%lu.pap=0 > /dev/null", drvname, unit);
 #endif
@@ -806,14 +809,15 @@ reset_ipg(int ifno)
 static void
 update_transmit_max_sustained_pps(int ifno, int ipg)
 {
+	struct interface *iface = &interface[ifno];
 	uint32_t maxpps;
 
-	maxpps = interface[ifno].maxlinkspeed / 8 / PKTSIZE2FRAMESIZE(interface[ifno].pktsize + ETHHDRSIZE, ipg);
+	maxpps = iface->maxlinkspeed / 8 / PKTSIZE2FRAMESIZE(iface->pktsize + ETHHDRSIZE, ipg);
 
-	if (interface[ifno].transmit_pps <= pps_hz)
-		maxpps = interface[ifno].transmit_pps;
+	if (iface->transmit_pps <= pps_hz)
+		maxpps = iface->transmit_pps;
 
-	interface[ifno].transmit_pps_max = maxpps;
+	iface->transmit_pps_max = maxpps;
 }
 
 static void
@@ -826,6 +830,7 @@ calc_ipg(int ifno)
 	}
 
 #ifdef IPG_HACK
+	struct interface *iface = &interface[ifno];
 	int dev_tipg, ipg = DEFAULT_IFG;
 
 	if (!support_ipg) {
@@ -833,15 +838,15 @@ calc_ipg(int ifno)
 		return;
 	}
 
-	if ((strncmp(interface[ifno].drvname, "em", 2) == 0) ||
-	    (strncmp(interface[ifno].drvname, "igb", 3) == 0)) {
+	if ((strncmp(iface->drvname, "em", 2) == 0) ||
+	    (strncmp(iface->drvname, "igb", 3) == 0)) {
 
-		if (interface[ifno].transmit_pps == 0) {
+		if (iface->transmit_pps == 0) {
 			dev_tipg = INT_MAX;
 		} else {
 			dev_tipg =
-			    ((interface[ifno].maxlinkspeed / 8) / interface[ifno].transmit_pps) -
-			    PKTSIZE2FRAMESIZE(interface[ifno].pktsize + ETHHDRSIZE, 0);
+			    ((iface->maxlinkspeed / 8) / iface->transmit_pps) -
+			    PKTSIZE2FRAMESIZE(iface->pktsize + ETHHDRSIZE, 0);
 		}
 		dev_tipg -= 4;	/* igb(4) NIC, ipg has offset 4 */
 		if (dev_tipg < 8)
@@ -852,17 +857,17 @@ calc_ipg(int ifno)
 
 		ipg = dev_tipg + 4;	/* restore offset */
 		update_transmit_max_sustained_pps(ifno, ipg);
-	} else if (strncmp(interface[ifno].drvname, "ix", 2) == 0) {
+	} else if (strncmp(iface->drvname, "ix", 2) == 0) {
 		unsigned long bps;
 		uint32_t new_pap;
 		int error;
 
-		if (interface[ifno].transmit_pps == 0) {
+		if (iface->transmit_pps == 0) {
 			dev_tipg = INT_MAX;
 		} else {
 			dev_tipg =
-			    ((interface[ifno].maxlinkspeed / 8) / interface[ifno].transmit_pps) -
-			    PKTSIZE2FRAMESIZE(interface[ifno].pktsize + ETHHDRSIZE, 0);
+			    ((iface->maxlinkspeed / 8) / iface->transmit_pps) -
+			    PKTSIZE2FRAMESIZE(iface->pktsize + ETHHDRSIZE, 0);
 		}
 		if (dev_tipg < 5)
 			dev_tipg = 5;
@@ -879,17 +884,17 @@ calc_ipg(int ifno)
 		}
 
 		/* 82599 and newer */ 
-		if (interface[ifno].transmit_pps == 0) {
+		if (iface->transmit_pps == 0) {
 			bps = 0;
 		} else {
-			bps = PKTSIZE2FRAMESIZE(interface[ifno].pktsize + ETHHDRSIZE, DEFAULT_IFG) * interface[ifno].transmit_pps * 8;
+			bps = PKTSIZE2FRAMESIZE(iface->pktsize + ETHHDRSIZE, DEFAULT_IFG) * iface->transmit_pps * 8;
 		}
 		/*  / 1000 / 1000; */
 
-		DEBUGLOG("pps=%u, bps=%lu\n", interface[ifno].transmit_pps, bps);
-		if ((bps % (interface[ifno].maxlinkspeed / 10)) > 0)
-			bps += interface[ifno].maxlinkspeed / 10;
-		new_pap = bps / (interface[ifno].maxlinkspeed / 10);
+		DEBUGLOG("pps=%u, bps=%lu\n", iface->transmit_pps, bps);
+		if ((bps % (iface->maxlinkspeed / 10)) > 0)
+			bps += iface->maxlinkspeed / 10;
+		new_pap = bps / (iface->maxlinkspeed / 10);
 
 		if (new_pap == 0)
 			new_pap = 1;
@@ -959,17 +964,19 @@ update_min_pktsize(void)
 static void
 update_transmit_Mbps(int ifno)
 {
-	if (interface[ifno].pktsize < min_pktsize)
-		interface[ifno].pktsize  = min_pktsize;
-	if (interface[ifno].pktsize > 1500)
-		interface[ifno].pktsize  = 1500;
+	struct interface *iface = &interface[ifno];
 
-	if (interface[ifno].transmit_enable) {
-		interface[ifno].transmit_Mbps = calc_mbps(
-		    interface[ifno].pktsize,
-		    (unsigned long long)interface[ifno].transmit_pps);
+	if (iface->pktsize < min_pktsize)
+		iface->pktsize  = min_pktsize;
+	if (iface->pktsize > 1500)
+		iface->pktsize  = 1500;
+
+	if (iface->transmit_enable) {
+		iface->transmit_Mbps = calc_mbps(
+		    iface->pktsize,
+		    (unsigned long long)iface->transmit_pps);
 	} else {
-		interface[ifno].transmit_Mbps = 0.0;
+		iface->transmit_Mbps = 0.0;
 	}
 	calc_ipg(ifno);
 }
@@ -1075,58 +1082,60 @@ interface_init(int ifno)
 void
 interface_setup(int ifno, const char *ifname)
 {
-	strcpy(interface[ifno].ifname, ifname);
-	sprintf(interface[ifno].decorated_ifname, "Interface: %s", ifname);
-	getiflinkaddr(ifname, &interface[ifno].eaddr);
+	struct interface *iface = &interface[ifno];
 
-	if ((interface[ifno].ipaddr.s_addr == 0) && ipv6_iszero(&interface[ifno].ip6addr)) {
-		getifipaddr(ifname, &interface[ifno].ipaddr, &interface[ifno].ipaddr_mask);
-		getifip6addr(ifname, &interface[ifno].ip6addr, &interface[ifno].ip6addr_mask);
+	strcpy(iface->ifname, ifname);
+	sprintf(iface->decorated_ifname, "Interface: %s", ifname);
+	getiflinkaddr(ifname, &iface->eaddr);
+
+	if ((iface->ipaddr.s_addr == 0) && ipv6_iszero(&iface->ip6addr)) {
+		getifipaddr(ifname, &iface->ipaddr, &iface->ipaddr_mask);
+		getifip6addr(ifname, &iface->ip6addr, &iface->ip6addr_mask);
 	}
 
-	if (interface[ifno].gw_l2random) {
+	if (iface->gw_l2random) {
 		fprintf(stderr, "L2 destination address is random\n");
 
 #ifdef SUPPORT_PPPOE
-	} else if (interface[ifno].pppoe) {
+	} else if (iface->pppoe) {
 		int rc;
-		struct pppoe_softc *sc = &interface[ifno].pppoe_sc;
+		struct pppoe_softc *sc = &iface->pppoe_sc;
 
 		memset(sc, 0, sizeof(struct pppoe_softc));
-		sc->ifname = interface[ifno].ifname;
-		sc->srcip = interface[ifno].ipaddr;
-		sc->dstip = interface[ifno].gwaddr;
+		sc->ifname = iface->ifname;
+		sc->srcip = iface->ipaddr;
+		sc->dstip = iface->gwaddr;
 		sc->session = getpid() & 0xffff;
 		getrandom(&sc->magic, sizeof(sc->magic), 0);
 
-		fprintf(stderr, "%s: accepting PPPoE...\n", interface[ifno].ifname);
+		fprintf(stderr, "%s: accepting PPPoE...\n", iface->ifname);
 
-		rc = pppoe_server(interface[ifno].ifname, sc);
+		rc = pppoe_server(iface->ifname, sc);
 		if (rc != 1) {
-			fprintf(stderr, "%s: PPPoE connection could not be established\n", interface[ifno].ifname);
+			fprintf(stderr, "%s: PPPoE connection could not be established\n", iface->ifname);
 			exit(1);
 		}
 
-		memcpy(&interface[ifno].gweaddr, &sc->dstmac, ETHER_ADDR_LEN);
+		memcpy(&iface->gweaddr, &sc->dstmac, ETHER_ADDR_LEN);
 
-		fprintf(stderr, "%s: PPPoE established\n", interface[ifno].ifname);
+		fprintf(stderr, "%s: PPPoE established\n", iface->ifname);
 
 #endif
-	} else if (memcmp(eth_zero, &interface[ifno].gweaddr, ETHER_ADDR_LEN) == 0) {
+	} else if (memcmp(eth_zero, &iface->gweaddr, ETHER_ADDR_LEN) == 0) {
 		/* need to resolv arp */
 		struct ether_addr *mac;
 		char *addrstr = NULL;
 
-		interface_wait_linkup(interface[ifno].ifname);
+		interface_wait_linkup(iface->ifname);
 
-		switch (interface[ifno].af_gwaddr) {
+		switch (iface->af_gwaddr) {
 		case AF_INET:
-			mac = arpresolv(ifname, interface[ifno].vlan_id, &interface[ifno].ipaddr, &interface[ifno].gwaddr);
-			addrstr = ip4_sprintf(&interface[ifno].gwaddr);
+			mac = arpresolv(ifname, iface->vlan_id, &iface->ipaddr, &iface->gwaddr);
+			addrstr = ip4_sprintf(&iface->gwaddr);
 			break;
 		case AF_INET6:
-			mac = ndpresolv(ifname, interface[ifno].vlan_id, &interface[ifno].ip6addr, &interface[ifno].gw6addr);
-			addrstr = ip6_sprintf(&interface[ifno].gw6addr);
+			mac = ndpresolv(ifname, iface->vlan_id, &iface->ip6addr, &iface->gw6addr);
+			addrstr = ip6_sprintf(&iface->gw6addr);
 			break;
 		default:
 			fprintf(stderr, "unknown address family to resolve mac-address of gateway\n");
@@ -1139,76 +1148,74 @@ interface_setup(int ifno, const char *ifname)
 			exit(1);
 		}
 
-		memcpy(&interface[ifno].gweaddr, mac, ETHER_ADDR_LEN);
+		memcpy(&iface->gweaddr, mac, ETHER_ADDR_LEN);
 
 		fprintf(stderr, "arp/ndp resolved. %s on %s = %s\n",
 		    addrstr,
-		    interface[ifno].ifname,
-		    ether_ntoa(&interface[ifno].gweaddr));
+		    iface->ifname,
+		    ether_ntoa(&iface->gweaddr));
 	}
 }
 
 void
 interface_open(int ifno)
 {
-	int ifno_another;
+	struct interface *iface = &interface[ifno];
+	struct interface *iface_other = &interface[ifno ^ 1];
 #ifdef USE_NETMAP
 	struct nmreq nmreq;
 	struct netmap_if *nifp;
 	struct netmap_ring *txring, *rxring;
 
 	memset(&nmreq, 0, sizeof(nmreq));
-	sprintf(interface[ifno].netmapname, "netmap:%s", interface[ifno].ifname);
+	sprintf(iface->netmapname, "netmap:%s", iface->ifname);
 
-	interface[ifno].nm_desc = nm_open(interface[ifno].netmapname, &nmreq, 0, NULL);
-	if (interface[ifno].nm_desc == NULL) {
+	iface->nm_desc = nm_open(iface->netmapname, &nmreq, 0, NULL);
+	if (iface->nm_desc == NULL) {
 		fprintf(stderr, "cannot open /dev/netmap\n");
 		exit(1);
 	}
 
 
-	nifp = interface[ifno].nm_desc->nifp;
+	nifp = iface->nm_desc->nifp;
 	txring = NETMAP_TXRING(nifp, 0);
 	rxring = NETMAP_RXRING(nifp, 0);
 
-	printf("%s: %d TX rings * %u slots, %d RX rings * %u slots", interface[ifno].ifname,
-	    interface[ifno].nm_desc->last_tx_ring - interface[ifno].nm_desc->first_tx_ring + 1,
+	printf("%s: %d TX rings * %u slots, %d RX rings * %u slots", iface->ifname,
+	    iface->nm_desc->last_tx_ring - iface->nm_desc->first_tx_ring + 1,
 	    txring->num_slots,
-	    interface[ifno].nm_desc->last_rx_ring - interface[ifno].nm_desc->first_rx_ring + 1,
+	    iface->nm_desc->last_rx_ring - iface->nm_desc->first_rx_ring + 1,
 	    rxring->num_slots
 	);
 
-	if (interface[ifno].nm_desc->done_mmap)
+	if (iface->nm_desc->done_mmap)
 		printf(", %u MB mapped",
-		    interface[ifno].nm_desc->memsize / 1024 / 1024);
+		    iface->nm_desc->memsize / 1024 / 1024);
 	printf("\n");
 
 #elif defined(USE_AF_XDP)
-	interface[ifno].ax_desc = ax_open(interface[ifno].ifname);
-	if (interface[ifno].ax_desc == NULL) {
+	iface->ax_desc = ax_open(iface->ifname);
+	if (iface->ax_desc == NULL) {
 		fprintf(stderr, "failed to initialize AF_XDP\n");
 		exit(1);
 	}
 #endif
 
-	ifno_another = ifno ^ 1;
-
 	/* for IPv6 multicast packet (ndp, etc), or bridge random L2 address mode */
-	if (use_ipv6 || interface[ifno_another].gw_l2random)
-		interface_promisc(interface[ifno].ifname, true, &interface[ifno].promisc_save);
+	if (use_ipv6 || iface_other->gw_l2random)
+		interface_promisc(iface->ifname, true, &iface->promisc_save);
 
-	interface[ifno].opened = 1;
+	iface->opened = 1;
 }
 
 void
 interface_close(int ifno)
 {
-	int ifno_another;
+	struct interface *iface = &interface[ifno];
+	struct interface *iface_other = &interface[ifno ^ 1];
 
-	ifno_another = ifno ^ 1;
-
-	if (use_ipv6 || interface[ifno_another].gw_l2random)
-		interface_promisc(interface[ifno].ifname, interface[ifno].promisc_save, NULL);
+	if (use_ipv6 || iface_other->gw_l2random)
+		interface_promisc(iface->ifname, iface->promisc_save, NULL);
 
 #ifdef USE_NETMAP
 #if 0	/* XXX */
@@ -1228,7 +1235,7 @@ interface_close(int ifno)
 	 * Xfast_syscall()
 	 *
 	 */
-	nm_close(interface[ifno].nm_desc);
+	nm_close(iface->nm_desc);
 #else
 
 	/*
@@ -1236,18 +1243,18 @@ interface_close(int ifno)
 	 * sleeping 200ms to wait returning from poll().
 	 */
 	usleep(200000);
-	nm_close(interface[ifno].nm_desc);
+	nm_close(iface->nm_desc);
 #endif
 
 #elif defined(USE_AF_XDP)
-	ax_close(interface[ifno].ax_desc);
+	ax_close(iface->ax_desc);
 #endif
 	reset_ipg(ifno);
 
-	interface[ifno].opened = 0;
+	iface->opened = 0;
 
-	if (interface[ifno].af_gwaddr != 0) {
-		memset(&interface[ifno].gweaddr, 0, ETHER_ADDR_LEN);
+	if (iface->af_gwaddr != 0) {
+		memset(&iface->gweaddr, 0, ETHER_ADDR_LEN);
 	}
 }
 
@@ -1267,23 +1274,25 @@ interface_need_transmit(int ifno)
 int
 interface_load_transmit_packet(int ifno, char *buf, uint16_t *lenp)
 {
-	if (pbufq_poll(&interface[ifno].pbufq) != NULL) {
+	struct interface *iface = &interface[ifno];
+
+	if (pbufq_poll(&iface->pbufq) != NULL) {
 		struct pbuf *p;
-		p = pbufq_dequeue(&interface[ifno].pbufq);
+		p = pbufq_dequeue(&iface->pbufq);
 		memcpy(buf, p->data, p->len);
 		*lenp = p->len;
 		pbuf_free(p);
 
-		interface[ifno].counter.tx_other++;
+		iface->counter.tx_other++;
 
 		return 2;	/* control packet */
 
-	} else if (interface[ifno].transmit_enable) {
+	} else if (iface->transmit_enable) {
 
 		for (;;) {
-			uint32_t x = atomic_fetchadd_32(&interface[ifno].transmit_txhz, 0);
+			uint32_t x = atomic_fetchadd_32(&iface->transmit_txhz, 0);
 			if (x) {
-				if (atomic_cmpset_32(&interface[ifno].transmit_txhz, x, x - 1))
+				if (atomic_cmpset_32(&iface->transmit_txhz, x, x - 1))
 					break;
 			} else {
 				return -1;
@@ -1303,6 +1312,7 @@ interface_load_transmit_packet(int ifno, char *buf, uint16_t *lenp)
 void
 icmpecho_handler(int ifno, char *pkt, int len, int l3offset)
 {
+	struct interface *iface = &interface[ifno];
 	struct pbuf *p;
 	int pktlen;
 
@@ -1312,10 +1322,10 @@ icmpecho_handler(int ifno, char *pkt, int len, int l3offset)
 	} else {
 		pktlen = ip4pkt_icmp_echoreply(p->data, l3offset, pkt, len);
 		if (pktlen > 0) {
-			ethpkt_src(p->data, (u_char *)&interface[ifno].eaddr);
-			ethpkt_dst(p->data, (u_char *)&interface[ifno].gweaddr);
+			ethpkt_src(p->data, (u_char *)&iface->eaddr);
+			ethpkt_dst(p->data, (u_char *)&iface->gweaddr);
 			p->len = pktlen;
-			pbufq_enqueue(&interface[ifno].pbufq, p);
+			pbufq_enqueue(&iface->pbufq, p);
 		} else {
 			pbuf_free(p);
 		}
@@ -1325,6 +1335,7 @@ icmpecho_handler(int ifno, char *pkt, int len, int l3offset)
 void
 arp_handler(int ifno, char *pkt, int l3offset)
 {
+	struct interface *iface = &interface[ifno];
 	int pktlen;
 	struct ether_addr eaddr;
 	struct in_addr spa, tpa;
@@ -1340,10 +1351,10 @@ arp_handler(int ifno, char *pkt, int l3offset)
 	if (op == ARPOP_REQUEST) {
 		struct pbuf *p;
 
-		switch (interface[ifno].af_gwaddr) {
+		switch (iface->af_gwaddr) {
 		case AF_INET:
 			/* don't answer gateway address */
-			if (tpa.s_addr == interface[ifno].gwaddr.s_addr)
+			if (tpa.s_addr == iface->gwaddr.s_addr)
 				return;
 			break;
 
@@ -1357,13 +1368,13 @@ arp_handler(int ifno, char *pkt, int l3offset)
 			fprintf(stderr, "cannot allocate buffer for arp request\n");
 		} else {
 			pktlen = ip4pkt_arpreply(p->data, pkt,
-			    interface[ifno].eaddr.octet,
-			    interface[ifno].ipaddr.s_addr,
-			    interface[ifno].ipaddr_mask.s_addr);
+			    iface->eaddr.octet,
+			    iface->ipaddr.s_addr,
+			    iface->ipaddr_mask.s_addr);
 
 			if (pktlen > 0) {
 				p->len = pktlen;
-				pbufq_enqueue(&interface[ifno].pbufq, p);
+				pbufq_enqueue(&iface->pbufq, p);
 			} else {
 				pbuf_free(p);
 			}
@@ -1374,6 +1385,7 @@ arp_handler(int ifno, char *pkt, int l3offset)
 void
 ndp_handler(int ifno, char *pkt, int l3offset)
 {
+	struct interface *iface = &interface[ifno];
 	int pktlen;
 	struct in6_addr src, target;
 	int type;
@@ -1384,10 +1396,10 @@ ndp_handler(int ifno, char *pkt, int l3offset)
 	if (type == ND_NEIGHBOR_SOLICIT) {
 		struct pbuf *p;
 
-		switch (interface[ifno].af_gwaddr) {
+		switch (iface->af_gwaddr) {
 		case AF_INET6:
 			/* don't answer gateway address */
-			if (IN6_ARE_ADDR_EQUAL(&target, &interface[ifno].gw6addr))
+			if (IN6_ARE_ADDR_EQUAL(&target, &iface->gw6addr))
 				return;
 			break;
 
@@ -1401,12 +1413,12 @@ ndp_handler(int ifno, char *pkt, int l3offset)
 			fprintf(stderr, "cannot allocate buffer for arp request\n");
 		} else {
 			pktlen = ip6pkt_neighbor_solicit_reply(p->data, pkt,
-			    interface[ifno].eaddr.octet,
-			    &interface[ifno].ip6addr);
+			    iface->eaddr.octet,
+			    &iface->ip6addr);
 
 			if (pktlen > 0) {
 				p->len = pktlen;
-				pbufq_enqueue(&interface[ifno].pbufq, p);
+				pbufq_enqueue(&iface->pbufq, p);
 			} else {
 				pbuf_free(p);
 			}
@@ -1473,6 +1485,7 @@ pppoe_handler(int ifno, char *pkt)
 void
 receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 {
+	struct interface *iface = &interface[ifno];
 	int is_ipv6 = 0;
 	struct ether_header *eth;
 	struct ip *ip;
@@ -1480,11 +1493,11 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 	int l3_offset;
 	uint16_t type;
 
-	interface[ifno].counter.rx++;
+	iface->counter.rx++;
 	if (opt_bps_include_preamble)
-		interface[ifno].counter.rx_byte += len + DEFAULT_IFG + DEFAULT_PREAMBLE + FCS;
+		iface->counter.rx_byte += len + DEFAULT_IFG + DEFAULT_PREAMBLE + FCS;
 	else
-		interface[ifno].counter.rx_byte += len + FCS;
+		iface->counter.rx_byte += len + FCS;
 
 	eth = (struct ether_header *)buf;
 	type = ntohs(eth->ether_type);
@@ -1499,7 +1512,7 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 	switch (type) {
 	case ETHERTYPE_FLOWCONTROL:
 		/* ignore FLOWCONTROL */
-		interface[ifno].counter.rx_flow++;
+		iface->counter.rx_flow++;
 		return;
 #ifdef SUPPORT_PPPOE
 	case ETHERTYPE_PPPOE:
@@ -1516,13 +1529,13 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 		}
 		l3_offset = sizeof(struct pppoe_l2) + 2;
 		if (pppoe_handler(ifno, buf) != 0) {
-			interface[ifno].counter.rx_arp++;
+			iface->counter.rx_arp++;
 			return;
 		}
 		break;
 #endif
 	case ETHERTYPE_ARP:
-		interface[ifno].counter.rx_arp++;
+		iface->counter.rx_arp++;
 		arp_handler(ifno, buf, l3_offset);
 		return;
 	case ETHERTYPE_IP:
@@ -1532,9 +1545,9 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 		is_ipv6 = 1;
 		break;
 	default:
-		interface[ifno].counter.rx_other++;
+		iface->counter.rx_other++;
 		if (opt_debuglevel > 0) {
-			printf("\r\n\r\n\r\n\r\n\r\n\r\n==== %s: len=%d ====\r\n", interface[ifno].ifname, len);
+			printf("\r\n\r\n\r\n\r\n\r\n\r\n==== %s: len=%d ====\r\n", iface->ifname, len);
 			dumpstr(buf, len, DUMPSTR_FLAGS_CRLF);
 		}
 		return;
@@ -1546,29 +1559,29 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 		if (ip6->ip6_nxt == IPPROTO_ICMPV6) {
 			struct icmp6_hdr *icmp6 = (struct icmp6_hdr *)(ip6 + 1);	/* XXX: no support extension header */
 
-			interface[ifno].counter.rx_icmp++;
+			iface->counter.rx_icmp++;
 
 			switch (icmp6->icmp6_type) {
 			case ICMP6_DST_UNREACH:
-				interface[ifno].counter.rx_icmpunreach++;
+				iface->counter.rx_icmpunreach++;
 				return;
 			case ND_REDIRECT:
-				interface[ifno].counter.rx_icmpredirect++;
+				iface->counter.rx_icmpredirect++;
 				return;
 			case ICMP6_ECHO_REQUEST:
-				interface[ifno].counter.rx_icmpecho++;
+				iface->counter.rx_icmpecho++;
 #if NOTYET
 				icmp6echo_handler(ifno, buf, len, l3_offset);
 #endif
 				return;
 
 			case ND_NEIGHBOR_SOLICIT:
-				interface[ifno].counter.rx_arp++;
+				iface->counter.rx_arp++;
 				ndp_handler(ifno, buf, l3_offset);
 				return;
 
 			default:
-				interface[ifno].counter.rx_icmpother++;
+				iface->counter.rx_icmpother++;
 				printf("icmp6 receive: type=%d, code=%d\n",
 				    icmp6->icmp6_type, icmp6->icmp6_code);
 				return;
@@ -1580,21 +1593,21 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 		if (ip->ip_p == IPPROTO_ICMP) {
 			struct icmp *icmp = (struct icmp *)((char *)ip + ip->ip_hl * 4);
 
-			interface[ifno].counter.rx_icmp++;
+			iface->counter.rx_icmp++;
 
 			switch (icmp->icmp_type) {
 			case ICMP_UNREACH:
-				interface[ifno].counter.rx_icmpunreach++;
+				iface->counter.rx_icmpunreach++;
 				return;
 			case ICMP_REDIRECT:
-				interface[ifno].counter.rx_icmpredirect++;
+				iface->counter.rx_icmpredirect++;
 				return;
 			case ICMP_ECHO:
-				interface[ifno].counter.rx_icmpecho++;
+				iface->counter.rx_icmpecho++;
 				icmpecho_handler(ifno, buf, len, l3_offset);
 				return;
 			default:
-				interface[ifno].counter.rx_icmpother++;
+				iface->counter.rx_icmpother++;
 				printf("icmp receive: type=%d, code=%d, l3offset=%d\n",
 				    icmp->icmp_type, icmp->icmp_code, l3_offset);
 				return;
@@ -1613,38 +1626,38 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 	seqdata = (struct seqdata *)(buf + len - sizeof(struct seqdata));
 	if (seqdata->magic != seq_magic) {
 		/* no ipgen packet? */
-		interface[ifno].counter.rx_other++;
+		iface->counter.rx_other++;
 		return;
 	}
 
 	seq = seqdata->seq;
-	seqrecord = seqtable_get(interface[ifno].seqtable, seq);
+	seqrecord = seqtable_get(iface->seqtable, seq);
 
 	if ((seqrecord == NULL) || seqrecord->seq != seq) {
-		interface[ifno].counter.rx_expire++;
+		iface->counter.rx_expire++;
 	} else {
 		timespecsub(curtime, &seqrecord->ts, &ts_delta);
 		ts_delta.tv_sec &= 0xff;
 		latency = ts_delta.tv_sec / 1000 + ts_delta.tv_nsec / 1000000.0;
 
-		interface[ifno].counter.latency_sum += latency;
-		interface[ifno].counter.latency_npkt++;
-		interface[ifno].counter.latency_avg =
-		    interface[ifno].counter.latency_sum / 
-		    interface[ifno].counter.latency_npkt;
+		iface->counter.latency_sum += latency;
+		iface->counter.latency_npkt++;
+		iface->counter.latency_avg =
+		    iface->counter.latency_sum / 
+		    iface->counter.latency_npkt;
 
-		if ((interface[ifno].counter.latency_min == 0) ||
-		    (interface[ifno].counter.latency_min > latency))
-			interface[ifno].counter.latency_min = latency;
-		if (interface[ifno].counter.latency_max < latency)
-			interface[ifno].counter.latency_max = latency;
+		if ((iface->counter.latency_min == 0) ||
+		    (iface->counter.latency_min > latency))
+			iface->counter.latency_min = latency;
+		if (iface->counter.latency_max < latency)
+			iface->counter.latency_max = latency;
 
 		flowid = seqrecord->flowid;
 		seqflow = seqrecord->flowseq;
 		if (get_flowid_max(ifno) >= flowid)
-			nskip = seqcheck_receive(interface[ifno].seqchecker_perflow[flowid], seqflow);
+			nskip = seqcheck_receive(iface->seqchecker_perflow[flowid], seqflow);
 
-		nskip = seqcheck_receive(interface[ifno].seqchecker, seq);
+		nskip = seqcheck_receive(iface->seqchecker, seq);
 		if (opt_debuglevel > 1) {
 			/* DEBUG */
 			if (nskip > 2) {
@@ -1662,6 +1675,7 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 void
 interface_receive(int ifno)
 {
+	struct interface *iface = &interface[ifno];
 #ifdef USE_NETMAP
 	char *buf;
 	unsigned int cur, n, i;
@@ -1672,9 +1686,9 @@ interface_receive(int ifno)
 
 	clock_gettime(CLOCK_MONOTONIC, &curtime);
 
-	nifp = interface[ifno].nm_desc->nifp;
-	for (i = interface[ifno].nm_desc->first_rx_ring;
-	    i <= interface[ifno].nm_desc->last_rx_ring; i++) {
+	nifp = iface->nm_desc->nifp;
+	for (i = iface->nm_desc->first_rx_ring;
+	    i <= iface->nm_desc->last_rx_ring; i++) {
 
 		rxring = NETMAP_RXRING(nifp, i);
 		if (nm_ring_empty(rxring))
@@ -1696,7 +1710,7 @@ interface_receive(int ifno)
 	struct timespec curtime;
 	struct ax_rx_handle handle;
 
-	npkts = ax_wait_for_packets(interface[ifno].ax_desc, &handle);
+	npkts = ax_wait_for_packets(iface->ax_desc, &handle);
 	if (npkts == 0)
 		return;
 
@@ -1706,20 +1720,21 @@ interface_receive(int ifno)
 		char *buf;
 		uint32_t len;
 
-		buf = ax_get_rx_buf(interface[ifno].ax_desc, &len, &handle);
+		buf = ax_get_rx_buf(iface->ax_desc, &len, &handle);
 
 		receive_packet(ifno, &curtime, buf, len);
 
 		ax_rx_handle_advance(&handle);
 	}
 
-	ax_complete_rx(interface[ifno].ax_desc, npkts);
+	ax_complete_rx(iface->ax_desc, npkts);
 #endif
 }
 
 int
 interface_transmit(int ifno)
 {
+	struct interface *iface = &interface[ifno];
 #ifdef USE_NETMAP
 	char *buf;
 	unsigned int cur, nspace, npkt, n;
@@ -1730,15 +1745,15 @@ interface_transmit(int ifno)
 	struct netmap_ring *txring;
 	int sentpkttype;
 
-	nifp = interface[ifno].nm_desc->nifp;
+	nifp = iface->nm_desc->nifp;
 	npkt = interface_need_transmit(ifno);
 	npkt = MIN(npkt, opt_npkt_sync);
 
 	clock_gettime(CLOCK_MONOTONIC, &currenttime_tx);
 
 #ifdef USE_MULTI_TX_QUEUE
-	for (i = interface[ifno].nm_desc->first_tx_ring;
-	    i <= interface[ifno].nm_desc->last_tx_ring; i++) {
+	for (i = iface->nm_desc->first_tx_ring;
+	    i <= iface->nm_desc->last_tx_ring; i++) {
 
 		txring = NETMAP_TXRING(nifp, i);
 #else
@@ -1758,10 +1773,10 @@ interface_transmit(int ifno)
 			txring->slot[cur].flags = 0;
 
 			if (opt_bps_include_preamble)
-				interface[ifno].counter.tx_byte += txring->slot[cur].len + DEFAULT_IFG + DEFAULT_PREAMBLE + FCS;
+				iface->counter.tx_byte += txring->slot[cur].len + DEFAULT_IFG + DEFAULT_PREAMBLE + FCS;
 			else
-				interface[ifno].counter.tx_byte += txring->slot[cur].len + FCS;
-			interface[ifno].counter.tx++;
+				iface->counter.tx_byte += txring->slot[cur].len + FCS;
+			iface->counter.tx++;
 		}
 		txring->head = txring->cur = cur;
 #ifdef USE_MULTI_TX_QUEUE
@@ -1775,7 +1790,7 @@ interface_transmit(int ifno)
 	npkt = interface_need_transmit(ifno);
 	npkt = MIN(npkt, opt_npkt_sync);
 
-	idx = ax_prepare_tx(interface[ifno].ax_desc, &npkt);
+	idx = ax_prepare_tx(iface->ax_desc, &npkt);
 
 	clock_gettime(CLOCK_MONOTONIC, &currenttime_tx);
 
@@ -1783,19 +1798,19 @@ interface_transmit(int ifno)
 		char *buf;
 		uint32_t *lenp;
 
-		buf = ax_get_tx_buf(interface[ifno].ax_desc, &lenp, idx, i);
+		buf = ax_get_tx_buf(iface->ax_desc, &lenp, idx, i);
 
 		sentpkttype = interface_load_transmit_packet(ifno, buf, (uint16_t *)lenp);
 		if (sentpkttype < 0)
 			break;
 		if (opt_bps_include_preamble)
-			interface[ifno].counter.tx_byte += *lenp + DEFAULT_IFG + DEFAULT_PREAMBLE + FCS;
+			iface->counter.tx_byte += *lenp + DEFAULT_IFG + DEFAULT_PREAMBLE + FCS;
 		else
-			interface[ifno].counter.tx_byte += *lenp + FCS;
-		interface[ifno].counter.tx++;
+			iface->counter.tx_byte += *lenp + FCS;
+		iface->counter.tx++;
 	}
 
-	ax_complete_tx(interface[ifno].ax_desc, npkt);
+	ax_complete_tx(iface->ax_desc, npkt);
 #endif
 
 	return 0;
@@ -1819,13 +1834,14 @@ interface_transmit(int ifno)
 static int
 interface_statistics_json(int ifno, char *buf, int buflen)
 {
+	struct interface *iface = &interface[ifno];
 	char buf_ipaddr[INET_ADDRSTRLEN], buf_eaddr[sizeof("00:00:00:00:00:00")];
 	char buf_gwaddr[INET_ADDRSTRLEN], buf_gweaddr[sizeof("00:00:00:00:00:00")];
 
-	inet_ntop(AF_INET, &interface[ifno].ipaddr, buf_ipaddr, sizeof(buf_ipaddr));
-	inet_ntop(AF_INET, &interface[ifno].gwaddr, buf_gwaddr, sizeof(buf_gwaddr));
-	ether_ntoa_r(&interface[ifno].eaddr, buf_eaddr);
-	ether_ntoa_r(&interface[ifno].gweaddr, buf_gweaddr);
+	inet_ntop(AF_INET, &iface->ipaddr, buf_ipaddr, sizeof(buf_ipaddr));
+	inet_ntop(AF_INET, &iface->gwaddr, buf_gwaddr, sizeof(buf_gwaddr));
+	ether_ntoa_r(&iface->eaddr, buf_eaddr);
+	ether_ntoa_r(&iface->gweaddr, buf_gweaddr);
 
 	return snprintf(buf, buflen,
 	    "{"
@@ -1868,41 +1884,41 @@ interface_statistics_json(int ifno, char *buf, int buflen)
 	    "\"latency-avg\":%.8f"
 	    "}",
 
-	    interface[ifno].ifname,
-	    (unsigned long long)interface[ifno].pktsize,
+	    iface->ifname,
+	    (unsigned long long)iface->pktsize,
 	    buf_ipaddr,
 	    buf_eaddr,
 	    buf_gwaddr,
 	    buf_gweaddr,
-	    (unsigned long long)interface[ifno].counter.tx,
-	    (unsigned long long)interface[ifno].counter.rx,
-	    (unsigned long long)interface[ifno].transmit_pps,
-	    (unsigned long long)interface[ifno].counter.tx_delta,
-	    (unsigned long long)interface[ifno].counter.rx_delta,
-	    (unsigned long long)interface[ifno].counter.tx_byte_delta * 8,
-	    (unsigned long long)interface[ifno].counter.rx_byte_delta * 8,
-	    (unsigned long long)interface[ifno].counter.tx_underrun,
-	    (unsigned long long)interface[ifno].counter.rx_seqdrop,
-	    (unsigned long long)interface[ifno].counter.rx_seqdrop_delta,
-	    (unsigned long long)interface[ifno].counter.rx_dup,
-	    (unsigned long long)interface[ifno].counter.rx_reorder,
+	    (unsigned long long)iface->counter.tx,
+	    (unsigned long long)iface->counter.rx,
+	    (unsigned long long)iface->transmit_pps,
+	    (unsigned long long)iface->counter.tx_delta,
+	    (unsigned long long)iface->counter.rx_delta,
+	    (unsigned long long)iface->counter.tx_byte_delta * 8,
+	    (unsigned long long)iface->counter.rx_byte_delta * 8,
+	    (unsigned long long)iface->counter.tx_underrun,
+	    (unsigned long long)iface->counter.rx_seqdrop,
+	    (unsigned long long)iface->counter.rx_seqdrop_delta,
+	    (unsigned long long)iface->counter.rx_dup,
+	    (unsigned long long)iface->counter.rx_reorder,
 
-	    (unsigned long long)interface[ifno].counter.rx_seqdrop_flow,
-	    (unsigned long long)interface[ifno].counter.rx_dup_flow,
-	    (unsigned long long)interface[ifno].counter.rx_reorder_flow,
+	    (unsigned long long)iface->counter.rx_seqdrop_flow,
+	    (unsigned long long)iface->counter.rx_dup_flow,
+	    (unsigned long long)iface->counter.rx_reorder_flow,
 
-	    (unsigned long long)interface[ifno].counter.rx_flow,
-	    (unsigned long long)interface[ifno].counter.rx_arp,
-	    (unsigned long long)interface[ifno].counter.rx_other,
-	    (unsigned long long)interface[ifno].counter.rx_icmp,
-	    (unsigned long long)interface[ifno].counter.rx_icmpecho,
-	    (unsigned long long)interface[ifno].counter.rx_icmpunreach,
-	    (unsigned long long)interface[ifno].counter.rx_icmpredirect,
-	    (unsigned long long)interface[ifno].counter.rx_icmpother,
+	    (unsigned long long)iface->counter.rx_flow,
+	    (unsigned long long)iface->counter.rx_arp,
+	    (unsigned long long)iface->counter.rx_other,
+	    (unsigned long long)iface->counter.rx_icmp,
+	    (unsigned long long)iface->counter.rx_icmpecho,
+	    (unsigned long long)iface->counter.rx_icmpunreach,
+	    (unsigned long long)iface->counter.rx_icmpredirect,
+	    (unsigned long long)iface->counter.rx_icmpother,
 
-	    interface[ifno].counter.latency_max,
-	    interface[ifno].counter.latency_min,
-	    interface[ifno].counter.latency_avg
+	    iface->counter.latency_max,
+	    iface->counter.latency_min,
+	    iface->counter.latency_avg
 	);
 }
 
@@ -1969,67 +1985,68 @@ sighandler_alrm(int signo)
 
 		/* update dropcounter */
 		for (i = 0; i < 2; i++) {
-			if (interface[i].opened) {
+			struct interface *iface = &interface[i];
+			if (iface->opened) {
 
-				interface[i].counter.rx_seqdrop = 
-				    seqcheck_dropcount(interface[i].seqchecker);
-				interface[i].counter.rx_dup =
-				    seqcheck_dupcount(interface[i].seqchecker);
-				interface[i].counter.rx_reorder = 
-				    seqcheck_reordercount(interface[i].seqchecker);
+				iface->counter.rx_seqdrop =
+				    seqcheck_dropcount(iface->seqchecker);
+				iface->counter.rx_dup =
+				    seqcheck_dupcount(iface->seqchecker);
+				iface->counter.rx_reorder =
+				    seqcheck_reordercount(iface->seqchecker);
 
-				interface[i].counter.rx_seqdrop_flow = 
-				    seqcheck_dropcount(interface[i].seqchecker_flowtotal);
-				interface[i].counter.rx_dup_flow =
-				    seqcheck_dupcount(interface[i].seqchecker_flowtotal);
-				interface[i].counter.rx_reorder_flow = 
-				    seqcheck_reordercount(interface[i].seqchecker_flowtotal);
+				iface->counter.rx_seqdrop_flow =
+				    seqcheck_dropcount(iface->seqchecker_flowtotal);
+				iface->counter.rx_dup_flow =
+				    seqcheck_dupcount(iface->seqchecker_flowtotal);
+				iface->counter.rx_reorder_flow =
+				    seqcheck_reordercount(iface->seqchecker_flowtotal);
 
 
 				/* update delta */
-				interface[i].counter.tx_delta = interface[i].counter.tx - interface[i].counter.tx_last;
-				interface[i].counter.tx_last = interface[i].counter.tx;
-				interface[i].counter.rx_delta = interface[i].counter.rx - interface[i].counter.rx_last;
-				interface[i].counter.rx_last = interface[i].counter.rx;
+				iface->counter.tx_delta = iface->counter.tx - iface->counter.tx_last;
+				iface->counter.tx_last = iface->counter.tx;
+				iface->counter.rx_delta = iface->counter.rx - iface->counter.rx_last;
+				iface->counter.rx_last = iface->counter.rx;
 
-				interface[i].counter.tx_byte_delta = interface[i].counter.tx_byte - interface[i].counter.tx_byte_last;
-				interface[i].counter.tx_byte_last = interface[i].counter.tx_byte;
-				interface[i].counter.rx_byte_delta = interface[i].counter.rx_byte - interface[i].counter.rx_byte_last;
-				interface[i].counter.rx_byte_last = interface[i].counter.rx_byte;
+				iface->counter.tx_byte_delta = iface->counter.tx_byte - iface->counter.tx_byte_last;
+				iface->counter.tx_byte_last = iface->counter.tx_byte;
+				iface->counter.rx_byte_delta = iface->counter.rx_byte - iface->counter.rx_byte_last;
+				iface->counter.rx_byte_last = iface->counter.rx_byte;
 
 #if 0
 				if (opt_bps_include_preamble) {
-					interface[i].counter.tx_Mbps =
-					    (interface[i].counter.tx_byte_delta +
-					     (interface[i].counter.tx_delta * (DEFAULT_IFG + DEFAULT_PREAMBLE + FCS))) *
+					iface->counter.tx_Mbps =
+					    (iface->counter.tx_byte_delta +
+					     (iface->counter.tx_delta * (DEFAULT_IFG + DEFAULT_PREAMBLE + FCS))) *
 					    8.0 / 1000 / 1000;
-					interface[i].counter.rx_Mbps =
-					    (interface[i].counter.rx_byte_delta +
-					     (interface[i].counter.rx_delta * (DEFAULT_IFG + DEFAULT_PREAMBLE + FCS))) *
+					iface->counter.rx_Mbps =
+					    (iface->counter.rx_byte_delta +
+					     (iface->counter.rx_delta * (DEFAULT_IFG + DEFAULT_PREAMBLE + FCS))) *
 					    8.0 / 1000 / 1000;
 				} else {
-					interface[i].counter.tx_Mbps = (interface[i].counter.tx_byte_delta + FCS) * 8.0 / 1000 / 1000;
-					interface[i].counter.rx_Mbps = (interface[i].counter.rx_byte_delta + FCS) * 8.0 / 1000 / 1000;
+					iface->counter.tx_Mbps = (iface->counter.tx_byte_delta + FCS) * 8.0 / 1000 / 1000;
+					iface->counter.rx_Mbps = (iface->counter.rx_byte_delta + FCS) * 8.0 / 1000 / 1000;
 				}
 #else
-				interface[i].counter.tx_Mbps = (interface[i].counter.tx_byte_delta) * 8.0 / 1000 / 1000;
-				interface[i].counter.rx_Mbps = (interface[i].counter.rx_byte_delta) * 8.0 / 1000 / 1000;
+				iface->counter.tx_Mbps = (iface->counter.tx_byte_delta) * 8.0 / 1000 / 1000;
+				iface->counter.rx_Mbps = (iface->counter.rx_byte_delta) * 8.0 / 1000 / 1000;
 #endif
 
 
-				interface[i].counter.rx_seqdrop_delta = interface[i].counter.rx_seqdrop - interface[i].counter.rx_seqdrop_last;
-				interface[i].counter.rx_seqdrop_last = interface[i].counter.rx_seqdrop;
-				interface[i].counter.rx_dup_delta = interface[i].counter.rx_dup - interface[i].counter.rx_dup_last;
-				interface[i].counter.rx_dup_last = interface[i].counter.rx_dup;
-				interface[i].counter.rx_reorder_delta = interface[i].counter.rx_reorder - interface[i].counter.rx_reorder_last;
-				interface[i].counter.rx_reorder_last = interface[i].counter.rx_reorder;
+				iface->counter.rx_seqdrop_delta = iface->counter.rx_seqdrop - iface->counter.rx_seqdrop_last;
+				iface->counter.rx_seqdrop_last = iface->counter.rx_seqdrop;
+				iface->counter.rx_dup_delta = iface->counter.rx_dup - iface->counter.rx_dup_last;
+				iface->counter.rx_dup_last = iface->counter.rx_dup;
+				iface->counter.rx_reorder_delta = iface->counter.rx_reorder - iface->counter.rx_reorder_last;
+				iface->counter.rx_reorder_last = iface->counter.rx_reorder;
 
-				interface[i].counter.rx_seqdrop_flow_delta = interface[i].counter.rx_seqdrop_flow - interface[i].counter.rx_seqdrop_flow_last;
-				interface[i].counter.rx_seqdrop_flow_last = interface[i].counter.rx_seqdrop_flow;
-				interface[i].counter.rx_dup_flow_delta = interface[i].counter.rx_dup_flow - interface[i].counter.rx_dup_flow_last;
-				interface[i].counter.rx_dup_flow_last = interface[i].counter.rx_dup_flow;
-				interface[i].counter.rx_reorder_flow_delta = interface[i].counter.rx_reorder_flow - interface[i].counter.rx_reorder_flow_last;
-				interface[i].counter.rx_reorder_flow_last = interface[i].counter.rx_reorder_flow;
+				iface->counter.rx_seqdrop_flow_delta = iface->counter.rx_seqdrop_flow - iface->counter.rx_seqdrop_flow_last;
+				iface->counter.rx_seqdrop_flow_last = iface->counter.rx_seqdrop_flow;
+				iface->counter.rx_dup_flow_delta = iface->counter.rx_dup_flow - iface->counter.rx_dup_flow_last;
+				iface->counter.rx_dup_flow_last = iface->counter.rx_dup_flow;
+				iface->counter.rx_reorder_flow_delta = iface->counter.rx_reorder_flow - iface->counter.rx_reorder_flow_last;
+				iface->counter.rx_reorder_flow_last = iface->counter.rx_reorder_flow;
 			}
 		}
 
@@ -2044,11 +2061,12 @@ sighandler_alrm(int signo)
 
 	/* check and reset tx pps counter atomically */
 	for (i = 0; i < 2; i++) {
-		x = ((uint64_t)interface[i].transmit_pps * ((uint64_t)nhz + 1) / pps_hz) -
-		    ((uint64_t)interface[i].transmit_pps * ((uint64_t)nhz) / pps_hz);
-		if (interface[i].transmit_enable &&
-		    ((x = atomic_swap_32(&interface[i].transmit_txhz, x)) != 0)) {
-			atomic_add_64(&interface[i].counter.tx_underrun, x);
+		struct interface *iface = &interface[i];
+		x = ((uint64_t)iface->transmit_pps * ((uint64_t)nhz + 1) / pps_hz) -
+		    ((uint64_t)iface->transmit_pps * ((uint64_t)nhz) / pps_hz);
+		if (iface->transmit_enable &&
+		    ((x = atomic_swap_32(&iface->transmit_txhz, x)) != 0)) {
+			atomic_add_64(&iface->counter.tx_underrun, x);
 		}
 	}
 
@@ -2226,28 +2244,27 @@ logging(char const *fmt, ...)
 void *
 tx_thread_main(void *arg)
 {
-	int ifno;
+	int ifno = *(int *)arg;
+	struct interface *iface = &interface[ifno];
 	int i, j;
 
 	(void)pthread_sigmask(SIG_BLOCK, &used_sigset, NULL);
 
-	ifno = *(int *)arg;
-
 	while (do_quit == 0) {
-		if (interface[ifno].need_reset_statistics) {
-			interface[ifno].need_reset_statistics = 0;
-			memset(&interface[ifno].counter, 0, sizeof(interface[ifno].counter));
-			seqcheck_clear(interface[ifno].seqchecker);
-			seqcheck_clear(interface[ifno].seqchecker_flowtotal);
+		if (iface->need_reset_statistics) {
+			iface->need_reset_statistics = 0;
+			memset(&iface->counter, 0, sizeof(iface->counter));
+			seqcheck_clear(iface->seqchecker);
+			seqcheck_clear(iface->seqchecker_flowtotal);
 			j = get_flownum(ifno);
 			for (i = 0; i < j; i++) {
-				seqcheck_clear(interface[ifno].seqchecker_perflow[i]);
+				seqcheck_clear(iface->seqchecker_perflow[i]);
 			}
 		}
 
 		interface_transmit(ifno);
 #ifdef USE_NETMAP
-		ioctl(interface[ifno].nm_desc->fd, NIOCTXSYNC, NULL);
+		ioctl(iface->nm_desc->fd, NIOCTXSYNC, NULL);
 #endif
 	}
 
@@ -2257,20 +2274,19 @@ tx_thread_main(void *arg)
 void *
 rx_thread_main(void *arg)
 {
+	int ifno = *(int *)arg;
+	struct interface *iface = &interface[ifno];
 	struct pollfd pollfd[1];
 	int rc;
-	int ifno;
 
 	(void)pthread_sigmask(SIG_BLOCK, &used_sigset, NULL);
-
-	ifno = *(int *)arg;
 
 	/* setup poll */
 	memset(pollfd, 0, sizeof(pollfd));
 #ifdef USE_NETMAP
-	pollfd[0].fd = interface[ifno].nm_desc->fd;
+	pollfd[0].fd = iface->nm_desc->fd;
 #elif defined(USE_AF_XDP)
-	pollfd[0].fd = ax_get_fd(interface[ifno].ax_desc);
+	pollfd[0].fd = ax_get_fd(iface->ax_desc);
 #endif
 
 	while (do_quit == 0) {
@@ -3541,10 +3557,11 @@ main(int argc, char *argv[])
 		case 'T':
 		case 'R':
 			{
-				int ifno, masklen;
+				int masklen;
 				char *p, *s, *tofree;
+				int ifno = (ch == 'T') ? 1 : 0;
+				struct interface *iface = &interface[ifno];
 
-				ifno = (ch == 'T') ? 1 : 0;
 				tofree = s = strdup(optarg);
 
 				if (vlan && pppoe) {
@@ -3557,8 +3574,8 @@ main(int argc, char *argv[])
 					usage();
 				}
 #endif
-				interface[ifno].vlan_id = vlan;
-				interface[ifno].pppoe = pppoe;
+				iface->vlan_id = vlan;
+				iface->pppoe = pppoe;
 				vlan = 0;
 				pppoe = 0;
 
@@ -3621,14 +3638,14 @@ main(int argc, char *argv[])
 #endif /* IPG_HACK */
 				p = strsep(&s, ",");
 				/* parse IPv4 or IPv6 or MAC-ADDRESS */
-				if (inet_pton(AF_INET, p, &interface[ifno].gwaddr) == 1) {
-					interface[ifno].af_gwaddr = AF_INET;
-				} else if (inet_pton(AF_INET6, p, &interface[ifno].gw6addr) == 1) {
-					interface[ifno].af_gwaddr = AF_INET6;
-				} else if (ether_aton_r(p, &interface[ifno].gweaddr) != NULL) {
+				if (inet_pton(AF_INET, p, &iface->gwaddr) == 1) {
+					iface->af_gwaddr = AF_INET;
+				} else if (inet_pton(AF_INET6, p, &iface->gw6addr) == 1) {
+					iface->af_gwaddr = AF_INET6;
+				} else if (ether_aton_r(p, &iface->gweaddr) != NULL) {
 					/* gweaddr is ok */
 				} else if (strcmp(p, "random") == 0) {
-					interface[ifno].gw_l2random = 1;
+					iface->gw_l2random = 1;
 				} else {
 					fprintf(stderr, "Cannot resolve: %s\n", p);
 					usage();
@@ -3637,10 +3654,10 @@ main(int argc, char *argv[])
 				if (s != NULL) {
 					p = strsep(&s, "/");
 					/* parse IPv4 or IPv6 */
-					if (inet_pton(AF_INET, p, &interface[ifno].ipaddr) == 1) {
-						interface[ifno].af_addr = AF_INET;
-					} else if (inet_pton(AF_INET6, p, &interface[ifno].ip6addr) == 1) {
-						interface[ifno].af_addr = AF_INET6;
+					if (inet_pton(AF_INET, p, &iface->ipaddr) == 1) {
+						iface->af_addr = AF_INET;
+					} else if (inet_pton(AF_INET6, p, &iface->ip6addr) == 1) {
+						iface->af_addr = AF_INET6;
 						use_ipv6 = 1;
 						update_min_pktsize();
 					} else {
@@ -3649,37 +3666,37 @@ main(int argc, char *argv[])
 					}
 
 					if (s == NULL) {
-						memset(&interface[ifno].ipaddr_mask, 0xff, sizeof(interface[ifno].ipaddr_mask));
-						memset(&interface[ifno].ip6addr_mask, 0xff, sizeof(interface[ifno].ip6addr_mask));
+						memset(&iface->ipaddr_mask, 0xff, sizeof(iface->ipaddr_mask));
+						memset(&iface->ip6addr_mask, 0xff, sizeof(iface->ip6addr_mask));
 					} else {
 						if (strchr(s, '.')) {
 							if (use_ipv6) {
 								fprintf(stderr, "funny address and mask: %s/%s\n", p, s);
 								usage();
 							}
-							inet_pton(AF_INET, s, &interface[ifno].ipaddr_mask);
+							inet_pton(AF_INET, s, &iface->ipaddr_mask);
 						} else if (strchr(s, ':')) {
 							if (!use_ipv6) {
 								fprintf(stderr, "funny address and mask: %s/%s\n", p, s);
 								usage();
 							}
-							inet_pton(AF_INET6, s, &interface[ifno].ip6addr_mask);
+							inet_pton(AF_INET6, s, &iface->ip6addr_mask);
 						} else {
 							masklen = strtol(s, NULL, 10);
-							switch (interface[ifno].af_addr) {
+							switch (iface->af_addr) {
 							case AF_INET:
 								if (masklen > 32) {
 									fprintf(stderr, "illegal address mask: %s\n", s);
 									usage();
 								}
-								interface[ifno].ipaddr_mask.s_addr = htonl(0xffffffff << (32 - masklen));
+								iface->ipaddr_mask.s_addr = htonl(0xffffffff << (32 - masklen));
 								break;
 							case AF_INET6:
 								if (masklen > 128) {
 									fprintf(stderr, "illegal address mask: %s\n", s);
 									usage();
 								}
-								prefix2in6addr(masklen, &interface[ifno].ip6addr_mask);
+								prefix2in6addr(masklen, &iface->ip6addr_mask);
 								break;
 							}
 						}
@@ -3690,8 +3707,8 @@ main(int argc, char *argv[])
 
 #ifdef SUPPORT_PPPOE
 				if (pppoe) {
-					if (interface[ifno].af_gwaddr != AF_INET ||
-					    interface[ifno].af_addr != AF_INET) {
+					if (iface->af_gwaddr != AF_INET ||
+					    iface->af_addr != AF_INET) {
 						fprintf(stderr, "For PPPoE, gateway-address and down-address must be IP addresses: %s\n", optarg);
 						usage();
 					}
