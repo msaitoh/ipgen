@@ -806,6 +806,63 @@ reset_ipg(int ifno)
 #endif /* IPG_HACK */
 }
 
+/*
+ * Check the availability of IPG and PAP features of the specified interface.
+ * On success, the function will fulfill interface[ifno].drvname (on both FreeBSD and Linux)
+ * and interface[ifno].unit (only on FreeBSD).
+ */
+static void
+setup_ipg(const int ifno, const char *ifname)
+{
+#ifdef IPG_HACK
+	char drvname[IFNAMSIZ];
+#ifdef __linux__
+	char path[256];
+
+	if (getdrvname(ifname, drvname) == -1) {
+		printf("warning: failed to get drvname of %s\n", ifname);
+		return;
+	}
+
+	snprintf(path, sizeof(path), "/sys/class/net/%s/tipg", ifname);
+	if (access(path, R_OK|W_OK) == 0) {
+		support_ipg = 1;
+		printf("%s TIPG feature supported\n", ifname);
+	} else {
+		snprintf(path, sizeof(path), "/sys/class/net/%s/pap", ifname);
+		if (access(path, R_OK|W_OK) == 0) {
+			support_ipg = 1;
+			printf("%s PAP feature supported\n", ifname);
+		} else
+			printf("%s Neither TIPG nor PAP feature supported\n", ifname);
+	}
+#else
+	char strbuf[256];
+	unsigned long unit;
+
+	if (getifunit(ifname, drvname, &unit) != -1) {
+		printf("warning: failed to get driver and unit of %s\n", ifname);
+		return;
+	}
+
+	snprintf(strbuf, sizeof(strbuf), "sysctl -q dev.%s.%lu.tipg > /dev/null", drvname, unit);
+	if (system(strbuf) == 0) {
+		support_ipg = 1;
+		printf("%s%lu TIPG feature supported\n", drvname, unit);
+	} else {
+		snprintf(strbuf, sizeof(strbuf), "sysctl -q dev.%s.%lu.pap > /dev/null", drvname, unit);
+		if (system(strbuf) == 0) {
+			support_ipg = 1;
+			printf("%s%lu PAP feature supported\n", drvname, unit);
+		} else
+			printf("%s%lu Neither TIPG feature nor PAP feature supported\n", drvname, unit);
+	}
+	interface[ifno].unit = unit;
+#endif
+	strcpy(interface[ifno].drvname, drvname);
+#endif /* IPG_HACK */
+}
+
 static void
 update_transmit_max_sustained_pps(int ifno, int ipg)
 {
@@ -3510,8 +3567,6 @@ main(int argc, char *argv[])
 	int pppoe = 0;
 	int vlan = 0;
 	char ifname[2][IFNAMSIZ];
-	char drvname[2][IFNAMSIZ];
-	unsigned long unit[2];
 	char *testscript = NULL;
 	uint64_t maxlinkspeed;
 
@@ -3599,44 +3654,8 @@ main(int argc, char *argv[])
 					usage();
 				strncpy(ifname[ifno], p, sizeof(ifname[0]));
 
-#ifdef IPG_HACK
-#ifdef __linux__
-				char path[256];
+				setup_ipg(ifno, ifname[ifno]);
 
-				snprintf(path, sizeof(path), "/sys/class/net/%s/tipg", ifname[ifno]);
-				if (access(path, R_OK|W_OK) == 0) {
-					support_ipg = 1;
-					printf("%s TIPG feature supported\n", ifname[ifno]);
-				} else {
-					snprintf(path, sizeof(path), "/sys/class/net/%s/pap", ifname[ifno]);
-					if (access(path, R_OK|W_OK) == 0) {
-						support_ipg = 1;
-						printf("%s PAP feature supported\n", ifname[ifno]);
-					} else
-						printf("%s Neither TIPG nor PAP feature supported\n", ifname[ifno]);
-				}
-
-				if (getdrvname(ifname[ifno], drvname[ifno]) == -1)
-					printf("warning: failed to get drvname of %s\n", ifname[ifno]);
-#else
-				if (getifunit(ifname[ifno], drvname[ifno], &unit[ifno]) != -1) {
-					char strbuf[256];
-
-					snprintf(strbuf, sizeof(strbuf), "sysctl -q dev.%s.%lu.tipg > /dev/null", drvname[ifno], unit[ifno]);
-					if (system(strbuf) == 0) {
-						support_ipg = 1;
-						printf("%s%lu TIPG feature supported\n", drvname[ifno], unit[ifno]);
-					} else {
-						snprintf(strbuf, sizeof(strbuf), "sysctl -q dev.%s.%lu.pap > /dev/null", drvname[ifno], unit[ifno]);
-						if (system(strbuf) == 0) {
-							support_ipg = 1;
-							printf("%s%lu PAP feature supported\n", drvname[ifno], unit[ifno]);
-						} else
-							printf("%s%lu Neither TIPG feature nor PAP feature supported\n", drvname[ifno], unit[ifno]);
-					}
-				}
-#endif
-#endif /* IPG_HACK */
 				p = strsep(&s, ",");
 				/* parse IPv4 or IPv6 or MAC-ADDRESS */
 				if (inet_pton(AF_INET, p, &iface->gwaddr) == 1) {
@@ -3929,9 +3948,6 @@ main(int argc, char *argv[])
 			continue;
 		if (opt_rxonly && i == 1)
 			continue;
-
-		strcpy(interface[i].drvname, drvname[i]);
-		interface[i].unit = unit[i];
 
 		/* Set maxlinkspeed */
 		for (j = 0; j < sizeof(ifflags)/sizeof(ifflags[0]); j++) {
