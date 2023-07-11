@@ -3274,89 +3274,93 @@ control_init_items(struct itemlist *itemlist)
 #endif
 	itemlist_setvalue(itemlist, ITEMLIST_ID_IPGEN_API, &ipgen_api);
 
-	itemlist_register_item(itemlist, ITEMLIST_ID_IFNAME0, NULL, interface[0].decorated_ifname);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IFNAME1, NULL, interface[1].decorated_ifname);
-	itemlist_register_item(itemlist, ITEMLIST_ID_TWIDDLE0, NULL, interface[0].twiddle);
-	itemlist_register_item(itemlist, ITEMLIST_ID_TWIDDLE1, NULL, interface[1].twiddle);
+#define REG(name, arg2, arg3)	itemlist_register_item(itemlist, ITEMLIST_ID_ ## name, (arg2), (arg3))
 
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_TX, NULL, &interface[0].counter.tx);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_TX, NULL, &interface[1].counter.tx);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_TX_OTHER, NULL, &interface[0].counter.tx_other);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_TX_OTHER, NULL, &interface[1].counter.tx_other);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_TX_UNDERRUN, NULL, &interface[0].counter.tx_underrun);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_RX_UNDERRUN, NULL, &interface[1].counter.tx_underrun);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_RX, NULL, &interface[0].counter.rx);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_RX, NULL, &interface[1].counter.rx);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_RX_DROP, NULL, &interface[0].counter.rx_seqdrop);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_RX_DROP, NULL, &interface[1].counter.rx_seqdrop);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_RX_DUP, NULL, &interface[0].counter.rx_dup);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_RX_DUP, NULL, &interface[1].counter.rx_dup);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_RX_REORDER, NULL, &interface[0].counter.rx_reorder);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_RX_REORDER, NULL, &interface[1].counter.rx_reorder);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_RX_REORDER_FLOW, NULL, &interface[0].counter.rx_reorder_flow);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_RX_REORDER_FLOW, NULL, &interface[1].counter.rx_reorder_flow);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_RX_FLOW, NULL, &interface[0].counter.rx_flow);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_RX_FLOW, NULL, &interface[1].counter.rx_flow);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_RX_ARP, NULL, &interface[0].counter.rx_arp);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_RX_ARP, NULL, &interface[1].counter.rx_arp);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_RX_ICMP, NULL, &interface[0].counter.rx_icmp);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_RX_ICMP, NULL, &interface[1].counter.rx_icmp);
+	REG(IFNAME0, NULL, interface[0].decorated_ifname);
+	REG(IFNAME1, NULL, interface[1].decorated_ifname);
+	REG(TWIDDLE0, NULL, interface[0].twiddle);
+	REG(TWIDDLE1, NULL, interface[1].twiddle);
+
+	REG(IF0_TX, NULL, &interface[0].counter.tx);
+	REG(IF1_TX, NULL, &interface[1].counter.tx);
+	REG(IF0_TX_OTHER, NULL, &interface[0].counter.tx_other);
+	REG(IF1_TX_OTHER, NULL, &interface[1].counter.tx_other);
+	REG(IF0_TX_UNDERRUN, NULL, &interface[0].counter.tx_underrun);
+	REG(IF1_RX_UNDERRUN, NULL, &interface[1].counter.tx_underrun);
+	REG(IF0_RX, NULL, &interface[0].counter.rx);
+	REG(IF1_RX, NULL, &interface[1].counter.rx);
+	REG(IF0_RX_DROP, NULL, &interface[0].counter.rx_seqdrop);
+	REG(IF1_RX_DROP, NULL, &interface[1].counter.rx_seqdrop);
+	REG(IF0_RX_DUP, NULL, &interface[0].counter.rx_dup);
+	REG(IF1_RX_DUP, NULL, &interface[1].counter.rx_dup);
+	REG(IF0_RX_REORDER, NULL, &interface[0].counter.rx_reorder);
+	REG(IF1_RX_REORDER, NULL, &interface[1].counter.rx_reorder);
+	REG(IF0_RX_REORDER_FLOW, NULL, &interface[0].counter.rx_reorder_flow);
+	REG(IF1_RX_REORDER_FLOW, NULL, &interface[1].counter.rx_reorder_flow);
+	REG(IF0_RX_FLOW, NULL, &interface[0].counter.rx_flow);
+	REG(IF1_RX_FLOW, NULL, &interface[1].counter.rx_flow);
+	REG(IF0_RX_ARP, NULL, &interface[0].counter.rx_arp);
+	REG(IF1_RX_ARP, NULL, &interface[1].counter.rx_arp);
+	REG(IF0_RX_ICMP, NULL, &interface[0].counter.rx_icmp);
+	REG(IF1_RX_ICMP, NULL, &interface[1].counter.rx_icmp);
 #if 0
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_RX_ICMPECHO, NULL, &interface[0].counter.rx_icmpecho);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_RX_ICMPECHO, NULL, &interface[1].counter.rx_icmpecho);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_RX_ICMPUNREACH, NULL, &interface[0].counter.rx_icmpunreach);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_RX_ICMPUNREACH, NULL, &interface[1].counter.rx_icmpunreach);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_RX_ICMPREDIRECT, NULL, &interface[0].counter.rx_icmpredirect);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_RX_ICMPREDIRECT, NULL, &interface[1].counter.rx_icmpredirect);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_RX_ICMPOTHER, NULL, &interface[0].counter.rx_icmpother);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_RX_ICMPOTHER, NULL, &interface[1].counter.rx_icmpother);
+	REG(IF0_RX_ICMPECHO, NULL, &interface[0].counter.rx_icmpecho);
+	REG(IF1_RX_ICMPECHO, NULL, &interface[1].counter.rx_icmpecho);
+	REG(IF0_RX_ICMPUNREACH, NULL, &interface[0].counter.rx_icmpunreach);
+	REG(IF1_RX_ICMPUNREACH, NULL, &interface[1].counter.rx_icmpunreach);
+	REG(IF0_RX_ICMPREDIRECT, NULL, &interface[0].counter.rx_icmpredirect);
+	REG(IF1_RX_ICMPREDIRECT, NULL, &interface[1].counter.rx_icmpredirect);
+	REG(IF0_RX_ICMPOTHER, NULL, &interface[0].counter.rx_icmpother);
+	REG(IF1_RX_ICMPOTHER, NULL, &interface[1].counter.rx_icmpother);
 #endif
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_RX_OTHER, NULL, &interface[0].counter.rx_other);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_RX_OTHER, NULL, &interface[1].counter.rx_other);
+	REG(IF0_RX_OTHER, NULL, &interface[0].counter.rx_other);
+	REG(IF1_RX_OTHER, NULL, &interface[1].counter.rx_other);
 
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_TX_DELTA, NULL, &interface[0].counter.tx_delta);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_TX_DELTA, NULL, &interface[1].counter.tx_delta);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_TX_BYTE_DELTA, NULL, &interface[0].counter.tx_byte_delta);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_TX_BYTE_DELTA, NULL, &interface[1].counter.tx_byte_delta);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_TX_MBPS, NULL, &interface[0].counter.tx_Mbps);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_TX_MBPS, NULL, &interface[1].counter.tx_Mbps);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_RX_DELTA, NULL, &interface[0].counter.rx_delta);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_RX_DELTA, NULL, &interface[1].counter.rx_delta);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_RX_BYTE_DELTA, NULL, &interface[0].counter.rx_byte_delta);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_RX_BYTE_DELTA, NULL, &interface[1].counter.rx_byte_delta);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_RX_MBPS, NULL, &interface[0].counter.rx_Mbps);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_RX_MBPS, NULL, &interface[1].counter.rx_Mbps);
+	REG(IF0_TX_DELTA, NULL, &interface[0].counter.tx_delta);
+	REG(IF1_TX_DELTA, NULL, &interface[1].counter.tx_delta);
+	REG(IF0_TX_BYTE_DELTA, NULL, &interface[0].counter.tx_byte_delta);
+	REG(IF1_TX_BYTE_DELTA, NULL, &interface[1].counter.tx_byte_delta);
+	REG(IF0_TX_MBPS, NULL, &interface[0].counter.tx_Mbps);
+	REG(IF1_TX_MBPS, NULL, &interface[1].counter.tx_Mbps);
+	REG(IF0_RX_DELTA, NULL, &interface[0].counter.rx_delta);
+	REG(IF1_RX_DELTA, NULL, &interface[1].counter.rx_delta);
+	REG(IF0_RX_BYTE_DELTA, NULL, &interface[0].counter.rx_byte_delta);
+	REG(IF1_RX_BYTE_DELTA, NULL, &interface[1].counter.rx_byte_delta);
+	REG(IF0_RX_MBPS, NULL, &interface[0].counter.rx_Mbps);
+	REG(IF1_RX_MBPS, NULL, &interface[1].counter.rx_Mbps);
 
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_LATENCY_MIN, NULL, &interface[0].counter.latency_min);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_LATENCY_MIN, NULL, &interface[1].counter.latency_min);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_LATENCY_MAX, NULL, &interface[0].counter.latency_max);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_LATENCY_MAX, NULL, &interface[1].counter.latency_max);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_LATENCY_AVG, NULL, &interface[0].counter.latency_avg);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_LATENCY_AVG, NULL, &interface[1].counter.latency_avg);
+	REG(IF0_LATENCY_MIN, NULL, &interface[0].counter.latency_min);
+	REG(IF1_LATENCY_MIN, NULL, &interface[1].counter.latency_min);
+	REG(IF0_LATENCY_MAX, NULL, &interface[0].counter.latency_max);
+	REG(IF1_LATENCY_MAX, NULL, &interface[1].counter.latency_max);
+	REG(IF0_LATENCY_AVG, NULL, &interface[0].counter.latency_avg);
+	REG(IF1_LATENCY_AVG, NULL, &interface[1].counter.latency_avg);
 
-	itemlist_register_item(itemlist, ITEMLIST_ID_PPS_HZ, NULL, &pps_hz);
-	itemlist_register_item(itemlist, ITEMLIST_ID_OPT_NFLOW, itemlist_callback_nflow, &opt_nflow);
-	itemlist_register_item(itemlist, ITEMLIST_ID_BUTTON_BPS_L1, itemlist_callback_l1_l2, NULL);
-	itemlist_register_item(itemlist, ITEMLIST_ID_BUTTON_BPS_L2, itemlist_callback_l1_l2, NULL);
-	itemlist_register_item(itemlist, ITEMLIST_ID_BPS_DESC, NULL, bps_desc);
+	REG(PPS_HZ, NULL, &pps_hz);
+	REG(OPT_NFLOW, itemlist_callback_nflow, &opt_nflow);
+	REG(BUTTON_BPS_L1, itemlist_callback_l1_l2, NULL);
+	REG(BUTTON_BPS_L2, itemlist_callback_l1_l2, NULL);
+	REG(BPS_DESC, NULL, bps_desc);
 
-	itemlist_register_item(itemlist, ITEMLIST_ID_BUTTON_BURST, itemlist_callback_burst_steady, NULL);
-	itemlist_register_item(itemlist, ITEMLIST_ID_BUTTON_STEADY, itemlist_callback_burst_steady, NULL);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_PKTSIZE, itemlist_callback_pktsize, &interface[0].pktsize);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_PKTSIZE, itemlist_callback_pktsize, &interface[1].pktsize);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_PPS, itemlist_callback_pps, &interface[0].transmit_pps);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_PPS, itemlist_callback_pps, &interface[1].transmit_pps);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_PPS_MAX, NULL, &interface[0].transmit_pps_max);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_PPS_MAX, NULL, &interface[1].transmit_pps_max);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_IMPLICIT_MBPS, NULL, &interface[0].transmit_Mbps);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_IMPLICIT_MBPS, NULL, &interface[1].transmit_Mbps);
+	REG(BUTTON_BURST, itemlist_callback_burst_steady, NULL);
+	REG(BUTTON_STEADY, itemlist_callback_burst_steady, NULL);
+	REG(IF0_PKTSIZE, itemlist_callback_pktsize, &interface[0].pktsize);
+	REG(IF1_PKTSIZE, itemlist_callback_pktsize, &interface[1].pktsize);
+	REG(IF0_PPS, itemlist_callback_pps, &interface[0].transmit_pps);
+	REG(IF1_PPS, itemlist_callback_pps, &interface[1].transmit_pps);
+	REG(IF0_PPS_MAX, NULL, &interface[0].transmit_pps_max);
+	REG(IF1_PPS_MAX, NULL, &interface[1].transmit_pps_max);
+	REG(IF0_IMPLICIT_MBPS, NULL, &interface[0].transmit_Mbps);
+	REG(IF1_IMPLICIT_MBPS, NULL, &interface[1].transmit_Mbps);
 
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_START, itemlist_callback_startstop, NULL);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF0_STOP, itemlist_callback_startstop, NULL);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_START, itemlist_callback_startstop, NULL);
-	itemlist_register_item(itemlist, ITEMLIST_ID_IF1_STOP, itemlist_callback_startstop, NULL);
+	REG(IF0_START, itemlist_callback_startstop, NULL);
+	REG(IF0_STOP, itemlist_callback_startstop, NULL);
+	REG(IF1_START, itemlist_callback_startstop, NULL);
+	REG(IF1_STOP, itemlist_callback_startstop, NULL);
 
-	itemlist_register_item(itemlist, ITEMLIST_ID_MSGBUF, NULL, msgbuf);
+	REG(MSGBUF, NULL, msgbuf);
+
+#undef REG
 
 	/* default */
 	if (opt_ipg)
