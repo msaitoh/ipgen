@@ -3556,6 +3556,65 @@ static struct option longopts[] = {
 	{	NULL,				0,			NULL,	0	}
 };
 
+static void
+parse_address(const int ifno, char *s)
+{
+	struct interface *iface = &interface[ifno];
+	char *p;
+
+	p = strsep(&s, "/");
+	/* parse IPv4 or IPv6 */
+	if (inet_pton(AF_INET, p, &iface->ipaddr) == 1) {
+		iface->af_addr = AF_INET;
+	} else if (inet_pton(AF_INET6, p, &iface->ip6addr) == 1) {
+		iface->af_addr = AF_INET6;
+		use_ipv6 = 1;
+		update_min_pktsize();
+	} else {
+		fprintf(stderr, "Cannot resolve: %s\n", p);
+		usage();
+	}
+
+	if (s == NULL) {
+		memset(&iface->ipaddr_mask, 0xff, sizeof(iface->ipaddr_mask));
+		memset(&iface->ip6addr_mask, 0xff, sizeof(iface->ip6addr_mask));
+	} else {
+		if (strchr(s, '.')) {
+			if (use_ipv6) {
+				fprintf(stderr, "funny address and mask: %s/%s\n", p, s);
+				usage();
+			}
+			inet_pton(AF_INET, s, &iface->ipaddr_mask);
+		} else if (strchr(s, ':')) {
+			if (!use_ipv6) {
+				fprintf(stderr, "funny address and mask: %s/%s\n", p, s);
+				usage();
+			}
+			inet_pton(AF_INET6, s, &iface->ip6addr_mask);
+		} else {
+			int masklen;
+
+			masklen = strtol(s, NULL, 10);
+			switch (iface->af_addr) {
+			case AF_INET:
+				if (masklen > 32) {
+					fprintf(stderr, "illegal address mask: %s\n", s);
+					usage();
+				}
+				iface->ipaddr_mask.s_addr = htonl(0xffffffff << (32 - masklen));
+				break;
+			case AF_INET6:
+				if (masklen > 128) {
+					fprintf(stderr, "illegal address mask: %s\n", s);
+					usage();
+				}
+				prefix2in6addr(masklen, &iface->ip6addr_mask);
+				break;
+			}
+		}
+	}
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -3613,7 +3672,6 @@ main(int argc, char *argv[])
 		case 'T':
 		case 'R':
 			{
-				int masklen;
 				char *p, *s, *tofree;
 				int ifno = (ch == 'T') ? 1 : 0;
 				struct interface *iface = &interface[ifno];
@@ -3671,57 +3729,8 @@ main(int argc, char *argv[])
 					usage();
 				}
 
-				if (s != NULL) {
-					p = strsep(&s, "/");
-					/* parse IPv4 or IPv6 */
-					if (inet_pton(AF_INET, p, &iface->ipaddr) == 1) {
-						iface->af_addr = AF_INET;
-					} else if (inet_pton(AF_INET6, p, &iface->ip6addr) == 1) {
-						iface->af_addr = AF_INET6;
-						use_ipv6 = 1;
-						update_min_pktsize();
-					} else {
-						fprintf(stderr, "Cannot resolve: %s\n", p);
-						usage();
-					}
-
-					if (s == NULL) {
-						memset(&iface->ipaddr_mask, 0xff, sizeof(iface->ipaddr_mask));
-						memset(&iface->ip6addr_mask, 0xff, sizeof(iface->ip6addr_mask));
-					} else {
-						if (strchr(s, '.')) {
-							if (use_ipv6) {
-								fprintf(stderr, "funny address and mask: %s/%s\n", p, s);
-								usage();
-							}
-							inet_pton(AF_INET, s, &iface->ipaddr_mask);
-						} else if (strchr(s, ':')) {
-							if (!use_ipv6) {
-								fprintf(stderr, "funny address and mask: %s/%s\n", p, s);
-								usage();
-							}
-							inet_pton(AF_INET6, s, &iface->ip6addr_mask);
-						} else {
-							masklen = strtol(s, NULL, 10);
-							switch (iface->af_addr) {
-							case AF_INET:
-								if (masklen > 32) {
-									fprintf(stderr, "illegal address mask: %s\n", s);
-									usage();
-								}
-								iface->ipaddr_mask.s_addr = htonl(0xffffffff << (32 - masklen));
-								break;
-							case AF_INET6:
-								if (masklen > 128) {
-									fprintf(stderr, "illegal address mask: %s\n", s);
-									usage();
-								}
-								prefix2in6addr(masklen, &iface->ip6addr_mask);
-								break;
-							}
-						}
-					}
-				}
+				if (s != NULL)
+					parse_address(ifno, s);
 
 				free(tofree);
 
