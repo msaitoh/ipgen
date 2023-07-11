@@ -1986,68 +1986,69 @@ sighandler_alrm(int signo)
 		/* update dropcounter */
 		for (i = 0; i < 2; i++) {
 			struct interface *iface = &interface[i];
-			if (iface->opened) {
 
-				iface->counter.rx_seqdrop =
-				    seqcheck_dropcount(iface->seqchecker);
-				iface->counter.rx_dup =
-				    seqcheck_dupcount(iface->seqchecker);
-				iface->counter.rx_reorder =
-				    seqcheck_reordercount(iface->seqchecker);
+			if (!iface->opened)
+				continue;
 
-				iface->counter.rx_seqdrop_flow =
-				    seqcheck_dropcount(iface->seqchecker_flowtotal);
-				iface->counter.rx_dup_flow =
-				    seqcheck_dupcount(iface->seqchecker_flowtotal);
-				iface->counter.rx_reorder_flow =
-				    seqcheck_reordercount(iface->seqchecker_flowtotal);
+			iface->counter.rx_seqdrop =
+			    seqcheck_dropcount(iface->seqchecker);
+			iface->counter.rx_dup =
+			    seqcheck_dupcount(iface->seqchecker);
+			iface->counter.rx_reorder =
+			    seqcheck_reordercount(iface->seqchecker);
+
+			iface->counter.rx_seqdrop_flow =
+			    seqcheck_dropcount(iface->seqchecker_flowtotal);
+			iface->counter.rx_dup_flow =
+			    seqcheck_dupcount(iface->seqchecker_flowtotal);
+			iface->counter.rx_reorder_flow =
+			    seqcheck_reordercount(iface->seqchecker_flowtotal);
 
 
-				/* update delta */
-				iface->counter.tx_delta = iface->counter.tx - iface->counter.tx_last;
-				iface->counter.tx_last = iface->counter.tx;
-				iface->counter.rx_delta = iface->counter.rx - iface->counter.rx_last;
-				iface->counter.rx_last = iface->counter.rx;
+			/* update delta */
+			iface->counter.tx_delta = iface->counter.tx - iface->counter.tx_last;
+			iface->counter.tx_last = iface->counter.tx;
+			iface->counter.rx_delta = iface->counter.rx - iface->counter.rx_last;
+			iface->counter.rx_last = iface->counter.rx;
 
-				iface->counter.tx_byte_delta = iface->counter.tx_byte - iface->counter.tx_byte_last;
-				iface->counter.tx_byte_last = iface->counter.tx_byte;
-				iface->counter.rx_byte_delta = iface->counter.rx_byte - iface->counter.rx_byte_last;
-				iface->counter.rx_byte_last = iface->counter.rx_byte;
+			iface->counter.tx_byte_delta = iface->counter.tx_byte - iface->counter.tx_byte_last;
+			iface->counter.tx_byte_last = iface->counter.tx_byte;
+			iface->counter.rx_byte_delta = iface->counter.rx_byte - iface->counter.rx_byte_last;
+			iface->counter.rx_byte_last = iface->counter.rx_byte;
 
 #if 0
-				if (opt_bps_include_preamble) {
-					iface->counter.tx_Mbps =
-					    (iface->counter.tx_byte_delta +
-					     (iface->counter.tx_delta * (DEFAULT_IFG + DEFAULT_PREAMBLE + FCS))) *
-					    8.0 / 1000 / 1000;
-					iface->counter.rx_Mbps =
-					    (iface->counter.rx_byte_delta +
-					     (iface->counter.rx_delta * (DEFAULT_IFG + DEFAULT_PREAMBLE + FCS))) *
-					    8.0 / 1000 / 1000;
-				} else {
-					iface->counter.tx_Mbps = (iface->counter.tx_byte_delta + FCS) * 8.0 / 1000 / 1000;
-					iface->counter.rx_Mbps = (iface->counter.rx_byte_delta + FCS) * 8.0 / 1000 / 1000;
-				}
+			if (opt_bps_include_preamble) {
+				iface->counter.tx_Mbps =
+				    (iface->counter.tx_byte_delta +
+				     (iface->counter.tx_delta * (DEFAULT_IFG + DEFAULT_PREAMBLE + FCS))) *
+				    8.0 / 1000 / 1000;
+				iface->counter.rx_Mbps =
+				    (iface->counter.rx_byte_delta +
+				     (iface->counter.rx_delta * (DEFAULT_IFG + DEFAULT_PREAMBLE + FCS))) *
+				    8.0 / 1000 / 1000;
+			} else {
+				iface->counter.tx_Mbps = (iface->counter.tx_byte_delta + FCS) * 8.0 / 1000 / 1000;
+				iface->counter.rx_Mbps = (iface->counter.rx_byte_delta + FCS) * 8.0 / 1000 / 1000;
+			}
 #else
-				iface->counter.tx_Mbps = (iface->counter.tx_byte_delta) * 8.0 / 1000 / 1000;
-				iface->counter.rx_Mbps = (iface->counter.rx_byte_delta) * 8.0 / 1000 / 1000;
+			iface->counter.tx_Mbps = (iface->counter.tx_byte_delta) * 8.0 / 1000 / 1000;
+			iface->counter.rx_Mbps = (iface->counter.rx_byte_delta) * 8.0 / 1000 / 1000;
 #endif
 
 
-				iface->counter.rx_seqdrop_delta = iface->counter.rx_seqdrop - iface->counter.rx_seqdrop_last;
-				iface->counter.rx_seqdrop_last = iface->counter.rx_seqdrop;
-				iface->counter.rx_dup_delta = iface->counter.rx_dup - iface->counter.rx_dup_last;
-				iface->counter.rx_dup_last = iface->counter.rx_dup;
-				iface->counter.rx_reorder_delta = iface->counter.rx_reorder - iface->counter.rx_reorder_last;
-				iface->counter.rx_reorder_last = iface->counter.rx_reorder;
+			iface->counter.rx_seqdrop_delta = iface->counter.rx_seqdrop - iface->counter.rx_seqdrop_last;
+			iface->counter.rx_seqdrop_last = iface->counter.rx_seqdrop;
+			iface->counter.rx_dup_delta = iface->counter.rx_dup - iface->counter.rx_dup_last;
+			iface->counter.rx_dup_last = iface->counter.rx_dup;
+			iface->counter.rx_reorder_delta = iface->counter.rx_reorder - iface->counter.rx_reorder_last;
+			iface->counter.rx_reorder_last = iface->counter.rx_reorder;
 
-				iface->counter.rx_seqdrop_flow_delta = iface->counter.rx_seqdrop_flow - iface->counter.rx_seqdrop_flow_last;
-				iface->counter.rx_seqdrop_flow_last = iface->counter.rx_seqdrop_flow;
-				iface->counter.rx_dup_flow_delta = iface->counter.rx_dup_flow - iface->counter.rx_dup_flow_last;
-				iface->counter.rx_dup_flow_last = iface->counter.rx_dup_flow;
-				iface->counter.rx_reorder_flow_delta = iface->counter.rx_reorder_flow - iface->counter.rx_reorder_flow_last;
-				iface->counter.rx_reorder_flow_last = iface->counter.rx_reorder_flow;
-			}
+			iface->counter.rx_seqdrop_flow_delta = iface->counter.rx_seqdrop_flow - iface->counter.rx_seqdrop_flow_last;
+			iface->counter.rx_seqdrop_flow_last = iface->counter.rx_seqdrop_flow;
+			iface->counter.rx_dup_flow_delta = iface->counter.rx_dup_flow - iface->counter.rx_dup_flow_last;
+			iface->counter.rx_dup_flow_last = iface->counter.rx_dup_flow;
+			iface->counter.rx_reorder_flow_delta = iface->counter.rx_reorder_flow - iface->counter.rx_reorder_flow_last;
+			iface->counter.rx_reorder_flow_last = iface->counter.rx_reorder_flow;
 		}
 
 		/* need to update statistics string buffer in json? */
