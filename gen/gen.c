@@ -3670,82 +3670,80 @@ main(int argc, char *argv[])
 			break;
 
 		case 'T':
-		case 'R':
-			{
-				char *p, *s, *tofree;
-				int ifno = (ch == 'T') ? 1 : 0;
-				struct interface *iface = &interface[ifno];
+		case 'R': {
+			char *p, *s, *tofree;
+			int ifno = (ch == 'T') ? 1 : 0;
+			struct interface *iface = &interface[ifno];
 
-				tofree = s = strdup(optarg);
+			tofree = s = strdup(optarg);
 
-				if (vlan && pppoe) {
-					fprintf(stderr, "VLAN (-V) and PPPoE (-P) cannot be specified at the same time\n");
-					usage();
-				}
+			if (vlan && pppoe) {
+				fprintf(stderr, "VLAN (-V) and PPPoE (-P) cannot be specified at the same time\n");
+				usage();
+			}
 #ifndef SUPPORT_PPPOE
-				if (pppoe) {
-					fprintf(stderr, "PPPoE is not supported on this OS\n");
-					usage();
-				}
+			if (pppoe) {
+				fprintf(stderr, "PPPoE is not supported on this OS\n");
+				usage();
+			}
 #endif
-				iface->vlan_id = vlan;
-				iface->pppoe = pppoe;
-				vlan = 0;
-				pppoe = 0;
+			iface->vlan_id = vlan;
+			iface->pppoe = pppoe;
+			vlan = 0;
+			pppoe = 0;
 
-				/*
-				 * parse
-				 *    "-Tem0,10.0.0.1"
-				 *    "-Tem0,fd00::1"
-				 *    "-Tem0,aa:bb:cc:dd:ee:ff"
-				 * or "-Tem0,10.0.0.1,10.0.0.2"
-				 * or "-Tem0,fd00:1,fd00::2"
-				 * or "-Tem0,aa:bb:cc:dd:ee:ff,10.0.0.2"
-				 * or "-Tem0,aa:bb:cc:dd:ee:ff,fd00::2"
-				 * or "-Tem0,10.0.0.1,10.0.0.2/24"
-				 * or "-Tem0,fd00::1,fd00::2/64"
-				 * or "-Tem0,aa:bb:cc:dd:ee:ff,10.0.0.2/24"
-				 * or "-Tem0,aa:bb:cc:dd:ee:ff,fd00::2/64"
-				 */
-				p = strsep(&s, ",");
-				if (s == NULL)
-					usage();
-				strncpy(ifname[ifno], p, sizeof(ifname[0]));
+			/*
+			 * parse
+			 *    "-Tem0,10.0.0.1"
+			 *    "-Tem0,fd00::1"
+			 *    "-Tem0,aa:bb:cc:dd:ee:ff"
+			 * or "-Tem0,10.0.0.1,10.0.0.2"
+			 * or "-Tem0,fd00:1,fd00::2"
+			 * or "-Tem0,aa:bb:cc:dd:ee:ff,10.0.0.2"
+			 * or "-Tem0,aa:bb:cc:dd:ee:ff,fd00::2"
+			 * or "-Tem0,10.0.0.1,10.0.0.2/24"
+			 * or "-Tem0,fd00::1,fd00::2/64"
+			 * or "-Tem0,aa:bb:cc:dd:ee:ff,10.0.0.2/24"
+			 * or "-Tem0,aa:bb:cc:dd:ee:ff,fd00::2/64"
+			 */
+			p = strsep(&s, ",");
+			if (s == NULL)
+				usage();
+			strncpy(ifname[ifno], p, sizeof(ifname[0]));
 
-				setup_ipg(ifno, ifname[ifno]);
+			setup_ipg(ifno, ifname[ifno]);
 
-				p = strsep(&s, ",");
-				/* parse IPv4 or IPv6 or MAC-ADDRESS */
-				if (inet_pton(AF_INET, p, &iface->gwaddr) == 1) {
-					iface->af_gwaddr = AF_INET;
-				} else if (inet_pton(AF_INET6, p, &iface->gw6addr) == 1) {
-					iface->af_gwaddr = AF_INET6;
-				} else if (ether_aton_r(p, &iface->gweaddr) != NULL) {
-					/* gweaddr is ok */
-				} else if (strcmp(p, "random") == 0) {
-					iface->gw_l2random = 1;
-				} else {
-					fprintf(stderr, "Cannot resolve: %s\n", p);
-					usage();
-				}
+			p = strsep(&s, ",");
+			/* parse IPv4 or IPv6 or MAC-ADDRESS */
+			if (inet_pton(AF_INET, p, &iface->gwaddr) == 1) {
+				iface->af_gwaddr = AF_INET;
+			} else if (inet_pton(AF_INET6, p, &iface->gw6addr) == 1) {
+				iface->af_gwaddr = AF_INET6;
+			} else if (ether_aton_r(p, &iface->gweaddr) != NULL) {
+				/* gweaddr is ok */
+			} else if (strcmp(p, "random") == 0) {
+				iface->gw_l2random = 1;
+			} else {
+				fprintf(stderr, "Cannot resolve: %s\n", p);
+				usage();
+			}
 
-				if (s != NULL)
-					parse_address(ifno, s);
+			if (s != NULL)
+				parse_address(ifno, s);
 
-				free(tofree);
+			free(tofree);
 
 #ifdef SUPPORT_PPPOE
-				if (pppoe) {
-					if (iface->af_gwaddr != AF_INET ||
-					    iface->af_addr != AF_INET) {
-						fprintf(stderr, "For PPPoE, gateway-address and down-address must be IP addresses: %s\n", optarg);
-						usage();
-					}
+			if (pppoe) {
+				if (iface->af_gwaddr != AF_INET ||
+				    iface->af_addr != AF_INET) {
+					fprintf(stderr, "For PPPoE, gateway-address and down-address must be IP addresses: %s\n", optarg);
+					usage();
 				}
-#endif
-
 			}
+#endif
 			break;
+		    }
 		case 'X':
 			opt_gentest++;
 			break;
