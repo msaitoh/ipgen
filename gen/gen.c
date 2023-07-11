@@ -2520,6 +2520,8 @@ typedef enum {
 void
 rfc2544_add_test(uint64_t maxlinkspeed, unsigned int pktsize)
 {
+	struct rfc2544_work *work = &rfc2544_work[rfc2544_ntest];
+
 	if (rfc2544_ntest >= RFC2544_MAXTESTNUM) {
 		fprintf(stderr, "Too many rfc2544 test (max 64). pktsize=%u ignored\n", pktsize);
 		return;
@@ -2529,11 +2531,11 @@ rfc2544_add_test(uint64_t maxlinkspeed, unsigned int pktsize)
 		return;
 	}
 
-	memset(&rfc2544_work[rfc2544_ntest], 0, sizeof(rfc2544_work[rfc2544_ntest]));
+	memset(work, 0, sizeof(*work));
 
-	rfc2544_work[rfc2544_ntest].pktsize = pktsize;
-	rfc2544_work[rfc2544_ntest].minpps = 1;
-	rfc2544_work[rfc2544_ntest].maxpps = maxlinkspeed / 8 / (pktsize + 18 + DEFAULT_IFG + DEFAULT_PREAMBLE);
+	work->pktsize = pktsize;
+	work->minpps = 1;
+	work->maxpps = maxlinkspeed / 8 / (pktsize + 18 + DEFAULT_IFG + DEFAULT_PREAMBLE);
 	rfc2544_ntest++;
 }
 
@@ -2624,7 +2626,8 @@ rfc2544_showresult(void)
 	 /* check link speed. 1G or 10G? */
 	tmp = 0 ;
 	for (i = 0; i < rfc2544_ntest; i++) {
-		mbps = calc_mbps(rfc2544_work[i].pktsize, rfc2544_work[i].curpps);
+		struct rfc2544_work *work = &rfc2544_work[i];
+		mbps = calc_mbps(work->pktsize, work->curpps);
 		if (tmp < mbps)
 			tmp = mbps;
 	}
@@ -2652,23 +2655,24 @@ rfc2544_showresult(void)
 	printf("---------+----+----+----+----+----+----+----+----+----+----+\n");
 
 	for (i = 0; i < rfc2544_ntest; i++) {
-		printf("%8u |", rfc2544_work[i].pktsize + 18);
+		struct rfc2544_work *work = &rfc2544_work[i];
+		printf("%8u |", work->pktsize + 18);
 
-		mbps = calc_mbps(rfc2544_work[i].pktsize, rfc2544_work[i].curpps);
+		mbps = calc_mbps(work->pktsize, work->curpps);
 		for (j = 0; j < mbps / 20 / linkspeed; j++)
 			printf("#");
 		for (; j < 51; j++)
 			printf(" ");
 
 		if (linkspeed == 100)
-			printf("%9.2fMbps, %9u/%9upps, %6.2f%%\n", mbps, rfc2544_work[i].curpps, rfc2544_work[i].limitpps,
-			    rfc2544_work[i].curpps * 100.0 / rfc2544_work[i].limitpps);
+			printf("%9.2fMbps, %9u/%9upps, %6.2f%%\n", mbps, work->curpps, work->limitpps,
+			    work->curpps * 100.0 / work->limitpps);
 		else if (linkspeed == 10)
-			printf("%8.2fMbps, %8u/%8upps, %6.2f%%\n", mbps, rfc2544_work[i].curpps, rfc2544_work[i].limitpps,
-			    rfc2544_work[i].curpps * 100.0 / rfc2544_work[i].limitpps);
+			printf("%8.2fMbps, %8u/%8upps, %6.2f%%\n", mbps, work->curpps, work->limitpps,
+			    work->curpps * 100.0 / work->limitpps);
 		else
-			printf("%7.2fMbps, %7u/%7upps, %6.2f%%\n", mbps, rfc2544_work[i].curpps, rfc2544_work[i].limitpps,
-			    rfc2544_work[i].curpps * 100.0 / rfc2544_work[i].limitpps);
+			printf("%7.2fMbps, %7u/%7upps, %6.2f%%\n", mbps, work->curpps, work->limitpps,
+			    work->curpps * 100.0 / work->limitpps);
 	}
 	printf("\n");
 
@@ -2680,23 +2684,25 @@ rfc2544_showresult(void)
 		printf("framesize|0   |100k|200k|300k|400k|500k|600k|700k|800k|900k|1.0m|1.1m|1.2m|1.3m|1.4m|1.5m pps\n");
 	printf("---------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+\n");
 	for (i = 0; i < rfc2544_ntest; i++) {
-		printf("%8u |", rfc2544_work[i].pktsize + 18);
+		struct rfc2544_work *work = &rfc2544_work[i];
 
-		pps = rfc2544_work[i].curpps;
+		printf("%8u |", work->pktsize + 18);
+
+		pps = work->curpps;
 		for (j = 0; j < pps / 20000 / linkspeed; j++)
 			printf("#");
 		for (; j < 75; j++)
 			printf(" ");
 
 		if (linkspeed == 100)
-			printf("%9u/%9upps, %6.2f%%\n", rfc2544_work[i].curpps, rfc2544_work[i].limitpps,
-			    rfc2544_work[i].curpps * 100.0 / rfc2544_work[i].limitpps);
+			printf("%9u/%9upps, %6.2f%%\n", work->curpps, work->limitpps,
+			    work->curpps * 100.0 / work->limitpps);
 		else if (linkspeed == 10)
-			printf("%8u/%8upps, %6.2f%%\n", rfc2544_work[i].curpps, rfc2544_work[i].limitpps,
-			    rfc2544_work[i].curpps * 100.0 / rfc2544_work[i].limitpps);
+			printf("%8u/%8upps, %6.2f%%\n", work->curpps, work->limitpps,
+			    work->curpps * 100.0 / work->limitpps);
 		else
-			printf("%7u/%7upps, %6.2f%%\n", rfc2544_work[i].curpps, rfc2544_work[i].limitpps,
-			    rfc2544_work[i].curpps * 100.0 / rfc2544_work[i].limitpps);
+			printf("%7u/%7upps, %6.2f%%\n", work->curpps, work->limitpps,
+			    work->curpps * 100.0 / work->limitpps);
 	}
 	printf("\n");
 }
@@ -2761,14 +2767,15 @@ rfc2544_showresult_json(char *filename)
 	fprintf(fp, "{");
 	fprintf(fp, "\"framesize\":{");
 	for (i = 0; i < rfc2544_ntest; i++) {
+		struct rfc2544_work *work = &rfc2544_work[i];
 		if (0 < i)
 			fprintf(fp, ",");
-		fprintf(fp, "\"%u\":", rfc2544_work[i].pktsize + 18);
+		fprintf(fp, "\"%u\":", work->pktsize + 18);
 		fprintf(fp, "{");
-		bps = calc_bps(rfc2544_work[i].pktsize, rfc2544_work[i].curpps);
+		bps = calc_bps(work->pktsize, work->curpps);
 		fprintf(fp, "\"bps\":\"%f\",", bps);
-		fprintf(fp, "\"curpps\":\"%u\",", rfc2544_work[i].curpps);
-		fprintf(fp, "\"limitpps\":\"%u\"", rfc2544_work[i].limitpps);
+		fprintf(fp, "\"curpps\":\"%u\",", work->curpps);
+		fprintf(fp, "\"limitpps\":\"%u\"", work->limitpps);
 		fprintf(fp, "}");
 	}
 	fprintf(fp, "}");
@@ -2779,15 +2786,16 @@ rfc2544_showresult_json(char *filename)
 static int
 rfc2544_down_pps(void)
 {
-	if ((rfc2544_work[rfc2544_nthtest].curpps - rfc2544_work[rfc2544_nthtest].ppsresolution) <= rfc2544_work[rfc2544_nthtest].minpps) {
-		rfc2544_work[rfc2544_nthtest].curpps = rfc2544_work[rfc2544_nthtest].minpps;
+	struct rfc2544_work *work = &rfc2544_work[rfc2544_nthtest];
+
+	if ((work->curpps - work->ppsresolution) <= work->minpps) {
+		work->curpps = work->minpps;
 		return 1;
 	}
 
-	rfc2544_work[rfc2544_nthtest].prevpps = rfc2544_work[rfc2544_nthtest].curpps;
-	rfc2544_work[rfc2544_nthtest].maxpps = rfc2544_work[rfc2544_nthtest].curpps;
-	rfc2544_work[rfc2544_nthtest].curpps =
-	    (rfc2544_work[rfc2544_nthtest].minpps + rfc2544_work[rfc2544_nthtest].maxpps) / 2;
+	work->prevpps = work->curpps;
+	work->maxpps = work->curpps;
+	work->curpps = (work->minpps + work->maxpps) / 2;
 
 	return 0;
 }
@@ -2795,21 +2803,22 @@ rfc2544_down_pps(void)
 static int
 rfc2544_up_pps(void)
 {
+	struct rfc2544_work *work = &rfc2544_work[rfc2544_nthtest];
 	unsigned int nextpps;
 
 
-	if ((rfc2544_work[rfc2544_nthtest].curpps + rfc2544_work[rfc2544_nthtest].ppsresolution - 1) >= rfc2544_work[rfc2544_nthtest].maxpps)
+	if ((work->curpps + work->ppsresolution - 1) >= work->maxpps)
 		return 1;
 
-	rfc2544_work[rfc2544_nthtest].prevpps = rfc2544_work[rfc2544_nthtest].curpps;
-	rfc2544_work[rfc2544_nthtest].minpps = rfc2544_work[rfc2544_nthtest].curpps;
+	work->prevpps = work->curpps;
+	work->minpps = work->curpps;
 
-	nextpps = (rfc2544_work[rfc2544_nthtest].minpps + rfc2544_work[rfc2544_nthtest].maxpps + 1) / 2;
-	if ((nextpps - rfc2544_work[rfc2544_nthtest].curpps) > rfc2544_work[rfc2544_nthtest].maxup)
-		nextpps = rfc2544_work[rfc2544_nthtest].curpps + rfc2544_work[rfc2544_nthtest].maxup;
-	rfc2544_work[rfc2544_nthtest].curpps = nextpps;
+	nextpps = (work->minpps + work->maxpps + 1) / 2;
+	if ((nextpps - work->curpps) > work->maxup)
+		nextpps = work->curpps + work->maxup;
+	work->curpps = nextpps;
 
-	if (rfc2544_work[rfc2544_nthtest].curpps < rfc2544_work[rfc2544_nthtest].minpps)
+	if (work->curpps < work->minpps)
 		return 1;
 
 	return 0;
@@ -2818,6 +2827,7 @@ rfc2544_up_pps(void)
 void
 rfc2544_test(int unsigned n)
 {
+	struct rfc2544_work *work = &rfc2544_work[rfc2544_nthtest];
 	static rfc2544_state_t state = RFC2544_START;
 	static struct timespec statetime;
 	int measure_done, do_down_pps;
@@ -2852,20 +2862,20 @@ rfc2544_test(int unsigned n)
 		transmit_set(1, 0);
 		statistics_clear();
 
-		rfc2544_work[rfc2544_nthtest].limitpps = rfc2544_work[rfc2544_nthtest].maxpps;
+		work->limitpps = work->maxpps;
 
-		rfc2544_work[rfc2544_nthtest].ppsresolution =
-		    rfc2544_work[rfc2544_nthtest].limitpps * opt_rfc2544_ppsresolution / 100.0;
-		if (rfc2544_work[rfc2544_nthtest].ppsresolution < 1)
-		    rfc2544_work[rfc2544_nthtest].ppsresolution = 1;
+		work->ppsresolution =
+		    work->limitpps * opt_rfc2544_ppsresolution / 100.0;
+		if (work->ppsresolution < 1)
+		    work->ppsresolution = 1;
 
 		if (opt_rfc2544_slowstart)
-			rfc2544_work[rfc2544_nthtest].maxup = rfc2544_work[rfc2544_nthtest].maxpps / 10;
+			work->maxup = work->maxpps / 10;
 		else
-			rfc2544_work[rfc2544_nthtest].maxup = rfc2544_work[rfc2544_nthtest].maxpps / 2;
+			work->maxup = work->maxpps / 2;
 
-		rfc2544_work[rfc2544_nthtest].prevpps = 0;
-		rfc2544_work[rfc2544_nthtest].curpps = rfc2544_work[rfc2544_nthtest].maxup;
+		work->prevpps = 0;
+		work->curpps = work->maxup;
 
 		memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
 		statetime.tv_sec += 2;	/* wait 2sec */
@@ -2878,8 +2888,8 @@ rfc2544_test(int unsigned n)
 			break;
 
 		/* enable transmit */
-		setpps(1, rfc2544_work[rfc2544_nthtest].curpps);
-		setpktsize(1, rfc2544_work[rfc2544_nthtest].pktsize);
+		setpps(1, work->curpps);
+		setpktsize(1, work->pktsize);
 		statistics_clear();
 		transmit_set(1, 1);
 
@@ -2895,20 +2905,20 @@ rfc2544_test(int unsigned n)
 		break;
 
 	case RFC2544_MEASURING0:
-		if (rfc2544_work[rfc2544_nthtest].prevpps) {
+		if (work->prevpps) {
 			logging("measuring pktsize %u, pps %u->%u, %.2f->%.2fMbps [%.2fMbps:%.2fMbps]",
-			    rfc2544_work[rfc2544_nthtest].pktsize,
-			    rfc2544_work[rfc2544_nthtest].prevpps,
-			    rfc2544_work[rfc2544_nthtest].curpps,
-			    calc_mbps(rfc2544_work[rfc2544_nthtest].pktsize, rfc2544_work[rfc2544_nthtest].prevpps),
-			    calc_mbps(rfc2544_work[rfc2544_nthtest].pktsize, rfc2544_work[rfc2544_nthtest].curpps),
-			    calc_mbps(rfc2544_work[rfc2544_nthtest].pktsize, rfc2544_work[rfc2544_nthtest].minpps),
-			    calc_mbps(rfc2544_work[rfc2544_nthtest].pktsize, rfc2544_work[rfc2544_nthtest].maxpps));
+			    work->pktsize,
+			    work->prevpps,
+			    work->curpps,
+			    calc_mbps(work->pktsize, work->prevpps),
+			    calc_mbps(work->pktsize, work->curpps),
+			    calc_mbps(work->pktsize, work->minpps),
+			    calc_mbps(work->pktsize, work->maxpps));
 		} else {
 			logging("measuring pktsize %d, pps %d (%.2fMbps)",
-			    rfc2544_work[rfc2544_nthtest].pktsize,
-			    rfc2544_work[rfc2544_nthtest].curpps,
-			    calc_mbps(rfc2544_work[rfc2544_nthtest].pktsize, rfc2544_work[rfc2544_nthtest].curpps));
+			    work->pktsize,
+			    work->curpps,
+			    calc_mbps(work->pktsize, work->curpps));
 		}
 
 		memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
@@ -2925,9 +2935,9 @@ rfc2544_test(int unsigned n)
 
 			do_down_pps = 1;
 			DEBUGLOG("RFC2544: pktsize=%d, pps=%d (%.2fMbps), rx=%llu, drop=%llu, drop-rate=%.3f\n",
-			    rfc2544_work[rfc2544_nthtest].pktsize,
-			    rfc2544_work[rfc2544_nthtest].curpps,
-			    calc_mbps(rfc2544_work[rfc2544_nthtest].pktsize, rfc2544_work[rfc2544_nthtest].curpps),
+			    work->pktsize,
+			    work->curpps,
+			    calc_mbps(work->pktsize, work->curpps),
 			    (unsigned long long)interface[0].counter.rx,
 			    (unsigned long long)interface[0].counter.rx_seqdrop,
 			    interface[0].counter.rx_seqdrop * 100.0 / interface[0].counter.rx);
@@ -2937,8 +2947,8 @@ rfc2544_test(int unsigned n)
 			if (interface[0].counter.rx == 0) {
 				do_down_pps = 1;
 				DEBUGLOG("RFC2544: pktsize=%d, pps=%d, no packet received. down pps\n",
-				    rfc2544_work[rfc2544_nthtest].pktsize,
-				    rfc2544_work[rfc2544_nthtest].curpps);
+				    work->pktsize,
+				    work->curpps);
 			} else {
 				/* pause frame workaround */
 				const uint64_t pause_detect_threshold = 10000; /* XXXX */
@@ -2949,23 +2959,23 @@ rfc2544_test(int unsigned n)
 					> opt_rfc2544_tolerable_error_rate)) {
 					do_down_pps = 1;
 					DEBUGLOG("RFC2544: pktsize=%d, pps=%d, pause frame workaround. down pps\n",
-					    rfc2544_work[rfc2544_nthtest].pktsize,
-					    rfc2544_work[rfc2544_nthtest].curpps);
+					    work->pktsize,
+					    work->curpps);
 				} else if ((interface[0].counter.rx * 100.0 / interface[1].counter.tx) < opt_rfc2544_tolerable_error_rate) {
 					do_down_pps = 1;
 					DEBUGLOG("RFC2544: pktsize=%d, pps=%d, tx=%llu, rx=%llu, enough packets not received. down pps\n",
-					    rfc2544_work[rfc2544_nthtest].pktsize,
-					    rfc2544_work[rfc2544_nthtest].curpps,
+					    work->pktsize,
+					    work->curpps,
 					    (unsigned long long)interface[1].counter.tx, (unsigned long long)interface[0].counter.rx);
 				} else {
 					/* no drop. OK! */
 					measure_done = rfc2544_up_pps();
 					if (!measure_done) {
 						DEBUGLOG("RFC2544: pktsize=%d, pps=%d, no drop. up pps\n",
-						    rfc2544_work[rfc2544_nthtest].pktsize,
-						    rfc2544_work[rfc2544_nthtest].curpps);
+						    work->pktsize,
+						    work->curpps);
 
-						setpps(1, rfc2544_work[rfc2544_nthtest].curpps);
+						setpps(1, work->curpps);
 						statistics_clear();
 						memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
 						statetime.tv_sec += 1;	/* wait 2sec */
@@ -2978,7 +2988,7 @@ rfc2544_test(int unsigned n)
 		if (do_down_pps) {
 			measure_done = rfc2544_down_pps();
 			if (!measure_done) {
-				setpps(1, rfc2544_work[rfc2544_nthtest].curpps);
+				setpps(1, work->curpps);
 				statistics_clear();
 				memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
 				statetime.tv_sec += 1;	/* wait 2sec */
@@ -2988,9 +2998,9 @@ rfc2544_test(int unsigned n)
 
 		if (measure_done) {
 			logging("done. pktsize %d, maximum pps %d (%.2fMbps)",
-			    rfc2544_work[rfc2544_nthtest].pktsize,
-			    rfc2544_work[rfc2544_nthtest].curpps,
-			    calc_mbps(rfc2544_work[rfc2544_nthtest].pktsize, rfc2544_work[rfc2544_nthtest].curpps));
+			    work->pktsize,
+			    work->curpps,
+			    calc_mbps(work->pktsize, work->curpps));
 
 			rfc2544_nthtest++;
 			if (rfc2544_nthtest >= rfc2544_ntest) {
