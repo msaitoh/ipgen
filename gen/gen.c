@@ -3606,6 +3606,217 @@ parse_address(const int ifno, char *s)
 	}
 }
 
+void
+generate_addrlists(void)
+{
+	int rc;
+	struct in_addr xaddr;
+	struct in6_addr xaddr6, xaddr6_begin;
+
+	if (opt_addrrange) {
+		if (opt_srcaddr_af == AF_INET) {
+			/* exclude hostzero address and gw address and broadcast address */
+			xaddr.s_addr = interface[1].ipaddr.s_addr | ~interface[1].ipaddr_mask.s_addr;	/* broadcast */
+			addresslist_exclude_daddr(interface[0].adrlist, xaddr);
+			addresslist_exclude_saddr(interface[1].adrlist, xaddr);
+			xaddr.s_addr = interface[1].ipaddr.s_addr & interface[1].ipaddr_mask.s_addr;	/* hostzero */
+			addresslist_exclude_daddr(interface[0].adrlist, xaddr);
+			addresslist_exclude_saddr(interface[1].adrlist, xaddr);
+			xaddr.s_addr = interface[1].gwaddr.s_addr;					/* gw address */
+			addresslist_exclude_daddr(interface[0].adrlist, xaddr);
+			addresslist_exclude_saddr(interface[1].adrlist, xaddr);
+
+			xaddr.s_addr = interface[0].ipaddr.s_addr | ~interface[0].ipaddr_mask.s_addr;	/* broadcast */
+			addresslist_exclude_saddr(interface[0].adrlist, xaddr);
+			addresslist_exclude_daddr(interface[1].adrlist, xaddr);
+			xaddr.s_addr = interface[0].ipaddr.s_addr & interface[0].ipaddr_mask.s_addr;	/* hostzero */
+			addresslist_exclude_saddr(interface[0].adrlist, xaddr);
+			addresslist_exclude_daddr(interface[1].adrlist, xaddr);
+			xaddr.s_addr = interface[0].gwaddr.s_addr;					/* gw address */
+			addresslist_exclude_saddr(interface[0].adrlist, xaddr);
+			addresslist_exclude_daddr(interface[1].adrlist, xaddr);
+
+			if (opt_saddr == 0)
+				opt_srcaddr_begin.s_addr = opt_srcaddr_end.s_addr = interface[1].ipaddr.s_addr;
+			if (opt_daddr == 0)
+				opt_dstaddr_begin.s_addr = opt_dstaddr_end.s_addr = interface[0].ipaddr.s_addr;
+
+			rc = addresslist_append(interface[1].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
+			    opt_srcaddr_begin, opt_srcaddr_end,
+			    opt_dstaddr_begin, opt_dstaddr_end,
+			    opt_srcport_begin, opt_srcport_end,
+			    opt_dstport_begin, opt_dstport_end);
+			if (rc != 0)
+				exit(1);
+
+			rc = addresslist_append(interface[0].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
+			    opt_dstaddr_begin, opt_dstaddr_end,
+			    opt_srcaddr_begin, opt_srcaddr_end,
+			    opt_dstport_begin, opt_dstport_end,
+			    opt_srcport_begin, opt_srcport_end);
+			if (rc != 0)
+				exit(1);
+		} else {
+			/* exclude gw address */
+			xaddr6 = interface[1].gw6addr;						/* gw address */
+			addresslist_exclude_daddr6(interface[0].adrlist, &xaddr6);
+			addresslist_exclude_saddr6(interface[1].adrlist, &xaddr6);
+
+			xaddr6 = interface[0].gw6addr;						/* gw address */
+			addresslist_exclude_saddr6(interface[0].adrlist, &xaddr6);
+			addresslist_exclude_daddr6(interface[1].adrlist, &xaddr6);
+
+			if (opt_saddr == 0)
+				opt_srcaddr6_begin = opt_srcaddr6_end = interface[1].ip6addr;
+			if (opt_daddr == 0)
+				opt_dstaddr6_begin = opt_dstaddr6_end = interface[0].ip6addr;
+
+			rc = addresslist_append6(interface[1].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
+			    &opt_srcaddr6_begin, &opt_srcaddr6_end,
+			    &opt_dstaddr6_begin, &opt_dstaddr6_end,
+			    opt_srcport_begin, opt_srcport_end,
+			    opt_dstport_begin, opt_dstport_end);
+			if (rc != 0)
+				exit(1);
+
+			rc = addresslist_append6(interface[0].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
+			    &opt_dstaddr6_begin, &opt_dstaddr6_end,
+			    &opt_srcaddr6_begin, &opt_srcaddr6_end,
+			    opt_dstport_begin, opt_dstport_end,
+			    opt_srcport_begin, opt_srcport_end);
+			if (rc != 0)
+				exit(1);
+		}
+
+	} else if (opt_allnet) {
+
+		if (!ipv4_iszero(&interface[0].ipaddr) && !ipv4_iszero(&interface[1].ipaddr)) {
+			/* exclude hostzero address and gw address and broadcast address */
+			xaddr.s_addr = interface[0].ipaddr.s_addr | ~interface[0].ipaddr_mask.s_addr;	/* broadcast */
+			addresslist_exclude_daddr(interface[1].adrlist, xaddr);
+			xaddr.s_addr = interface[0].ipaddr.s_addr & interface[0].ipaddr_mask.s_addr;	/* hostzero */
+			addresslist_exclude_daddr(interface[1].adrlist, xaddr);
+			xaddr.s_addr = interface[0].gwaddr.s_addr;					/* gw address */
+			addresslist_exclude_daddr(interface[1].adrlist, xaddr);
+
+			xaddr.s_addr = interface[1].ipaddr.s_addr | ~interface[1].ipaddr_mask.s_addr;	/* broadcast */
+			addresslist_exclude_daddr(interface[0].adrlist, xaddr);
+			xaddr.s_addr = interface[1].ipaddr.s_addr & interface[1].ipaddr_mask.s_addr;	/* hostzero */
+			addresslist_exclude_daddr(interface[0].adrlist, xaddr);
+			xaddr.s_addr = interface[1].gwaddr.s_addr;					/* gw address */
+			addresslist_exclude_daddr(interface[0].adrlist, xaddr);
+
+			xaddr.s_addr = interface[0].ipaddr.s_addr | ~interface[0].ipaddr_mask.s_addr;	/* broadcast */
+			rc = addresslist_append(interface[1].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
+			    interface[1].ipaddr, interface[1].ipaddr,
+			    interface[0].ipaddr, xaddr,
+			    opt_srcport_begin, opt_srcport_end,
+			    opt_dstport_begin, opt_dstport_end);
+			if (rc != 0)
+				exit(1);
+
+			xaddr.s_addr = interface[1].ipaddr.s_addr | ~interface[0].ipaddr_mask.s_addr;	/* broadcast */
+			rc = addresslist_append(interface[0].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
+			    interface[0].ipaddr, interface[0].ipaddr,
+			    interface[1].ipaddr, xaddr,
+			    opt_dstport_begin, opt_dstport_end,
+			    opt_srcport_begin, opt_srcport_end);
+			if (rc != 0)
+				exit(1);
+
+		} else if (!ipv6_iszero(&interface[0].ip6addr) && !ipv6_iszero(&interface[1].ip6addr)) {
+			/* exclude gw address */
+			xaddr6 = interface[0].gw6addr;					/* gw address */
+			addresslist_exclude_daddr6(interface[1].adrlist, &xaddr6);
+			xaddr6 = interface[1].gw6addr;					/* gw address */
+			addresslist_exclude_daddr6(interface[0].adrlist, &xaddr6);
+
+			/* e.g.) fd00::1/112 => from fd00:0 to fd00::ffff */
+			xaddr6_begin = interface[0].ip6addr_mask;
+			ipv6_and(&interface[0].ip6addr, &xaddr6_begin, &xaddr6_begin);	/* beginning of network address */
+			ipv6_not(&interface[0].ip6addr_mask, &xaddr6);
+			ipv6_or(&interface[0].ip6addr, &xaddr6, &xaddr6);	/* end of network address */
+			rc = addresslist_append6(interface[1].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
+			    &interface[1].ip6addr, &interface[1].ip6addr,
+			    &xaddr6_begin, &xaddr6,
+			    opt_srcport_begin, opt_srcport_end,
+			    opt_dstport_begin, opt_dstport_end);
+			if (rc != 0)
+				exit(1);
+
+			xaddr6_begin = interface[1].ip6addr_mask;
+			ipv6_and(&interface[1].ip6addr, &xaddr6_begin, &xaddr6_begin);	/* beginning of network address */
+			ipv6_not(&interface[1].ip6addr_mask, &xaddr6);
+			ipv6_or(&interface[1].ip6addr, &xaddr6, &xaddr6);	/* last of network address */
+			rc = addresslist_append6(interface[0].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
+			    &interface[0].ip6addr, &interface[0].ip6addr,
+			    &xaddr6_begin, &xaddr6,
+			    opt_dstport_begin, opt_dstport_end,
+			    opt_srcport_begin, opt_srcport_end);
+			if (rc != 0)
+				exit(1);
+
+		} else {
+			fprintf(stderr, "no address info on %s and %s\n",
+			    interface[0].ifname, interface[1].ifname);
+			exit(1);
+		}
+
+	} else {
+		if (!ipv4_iszero(&interface[0].ipaddr) && !ipv4_iszero(&interface[1].ipaddr)) {
+			rc = addresslist_append(interface[1].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
+			    interface[1].ipaddr, interface[1].ipaddr,
+			    interface[0].ipaddr, interface[0].ipaddr,
+			    opt_srcport_begin, opt_srcport_end,
+			    opt_dstport_begin, opt_dstport_end);
+			if (rc != 0)
+				exit(1);
+
+			rc = addresslist_append(interface[0].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
+			    interface[0].ipaddr, interface[0].ipaddr,
+			    interface[1].ipaddr, interface[1].ipaddr,
+			    opt_srcport_begin, opt_srcport_end,
+			    opt_dstport_begin, opt_dstport_end);
+			if (rc != 0)
+				exit(1);
+
+		} else if (!ipv6_iszero(&interface[0].ip6addr) && !ipv6_iszero(&interface[1].ip6addr)) {
+			rc = addresslist_append6(interface[1].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
+			    &interface[1].ip6addr, &interface[1].ip6addr,
+			    &interface[0].ip6addr, &interface[0].ip6addr,
+			    opt_srcport_begin, opt_srcport_end,
+			    opt_dstport_begin, opt_dstport_end);
+			if (rc != 0)
+				exit(1);
+
+			rc = addresslist_append6(interface[0].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
+			    &interface[0].ip6addr, &interface[0].ip6addr,
+			    &interface[1].ip6addr, &interface[1].ip6addr,
+			    opt_srcport_begin, opt_srcport_end,
+			    opt_dstport_begin, opt_dstport_end);
+			if (rc != 0)
+				exit(1);
+		} else {
+			/* no address information. use 0.0.0.0-0.0.0.0 */
+			rc = addresslist_append(interface[1].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
+			    interface[1].ipaddr, interface[1].ipaddr,
+			    interface[0].ipaddr, interface[0].ipaddr,
+			    opt_srcport_begin, opt_srcport_end,
+			    opt_dstport_begin, opt_dstport_end);
+			if (rc != 0)
+				exit(1);
+
+			rc = addresslist_append(interface[0].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
+			    interface[0].ipaddr, interface[0].ipaddr,
+			    interface[1].ipaddr, interface[1].ipaddr,
+			    opt_srcport_begin, opt_srcport_end,
+			    opt_dstport_begin, opt_dstport_end);
+			if (rc != 0)
+				exit(1);
+		}
+	}
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -3613,7 +3824,6 @@ main(int argc, char *argv[])
 	unsigned int i, j;
 	int ch, optidx;
 	int pps;
-	int rc;
 	int pppoe = 0;
 	int vlan = 0;
 	char ifname[2][IFNAMSIZ];
@@ -4115,211 +4325,8 @@ main(int argc, char *argv[])
 			exit(2);
 
 	} else {
-		struct in_addr xaddr;
-		struct in6_addr xaddr6, xaddr6_begin;
-
-		if (opt_addrrange) {
-			if (opt_srcaddr_af == AF_INET) {
-				/* exclude hostzero address and gw address and broadcast address */
-				xaddr.s_addr = interface[1].ipaddr.s_addr | ~interface[1].ipaddr_mask.s_addr;	/* broadcast */
-				addresslist_exclude_daddr(interface[0].adrlist, xaddr);
-				addresslist_exclude_saddr(interface[1].adrlist, xaddr);
-				xaddr.s_addr = interface[1].ipaddr.s_addr & interface[1].ipaddr_mask.s_addr;	/* hostzero */
-				addresslist_exclude_daddr(interface[0].adrlist, xaddr);
-				addresslist_exclude_saddr(interface[1].adrlist, xaddr);
-				xaddr.s_addr = interface[1].gwaddr.s_addr;					/* gw address */
-				addresslist_exclude_daddr(interface[0].adrlist, xaddr);
-				addresslist_exclude_saddr(interface[1].adrlist, xaddr);
-
-				xaddr.s_addr = interface[0].ipaddr.s_addr | ~interface[0].ipaddr_mask.s_addr;	/* broadcast */
-				addresslist_exclude_saddr(interface[0].adrlist, xaddr);
-				addresslist_exclude_daddr(interface[1].adrlist, xaddr);
-				xaddr.s_addr = interface[0].ipaddr.s_addr & interface[0].ipaddr_mask.s_addr;	/* hostzero */
-				addresslist_exclude_saddr(interface[0].adrlist, xaddr);
-				addresslist_exclude_daddr(interface[1].adrlist, xaddr);
-				xaddr.s_addr = interface[0].gwaddr.s_addr;					/* gw address */
-				addresslist_exclude_saddr(interface[0].adrlist, xaddr);
-				addresslist_exclude_daddr(interface[1].adrlist, xaddr);
-
-				if (opt_saddr == 0)
-					opt_srcaddr_begin.s_addr = opt_srcaddr_end.s_addr = interface[1].ipaddr.s_addr;
-				if (opt_daddr == 0)
-					opt_dstaddr_begin.s_addr = opt_dstaddr_end.s_addr = interface[0].ipaddr.s_addr;
-
-				rc = addresslist_append(interface[1].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
-				    opt_srcaddr_begin, opt_srcaddr_end,
-				    opt_dstaddr_begin, opt_dstaddr_end,
-				    opt_srcport_begin, opt_srcport_end,
-				    opt_dstport_begin, opt_dstport_end);
-				if (rc != 0)
-					exit(1);
-
-				rc = addresslist_append(interface[0].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
-				    opt_dstaddr_begin, opt_dstaddr_end,
-				    opt_srcaddr_begin, opt_srcaddr_end,
-				    opt_dstport_begin, opt_dstport_end,
-				    opt_srcport_begin, opt_srcport_end);
-				if (rc != 0)
-					exit(1);
-			} else {
-				/* exclude gw address */
-				xaddr6 = interface[1].gw6addr;						/* gw address */
-				addresslist_exclude_daddr6(interface[0].adrlist, &xaddr6);
-				addresslist_exclude_saddr6(interface[1].adrlist, &xaddr6);
-
-				xaddr6 = interface[0].gw6addr;						/* gw address */
-				addresslist_exclude_saddr6(interface[0].adrlist, &xaddr6);
-				addresslist_exclude_daddr6(interface[1].adrlist, &xaddr6);
-
-				if (opt_saddr == 0)
-					opt_srcaddr6_begin = opt_srcaddr6_end = interface[1].ip6addr;
-				if (opt_daddr == 0)
-					opt_dstaddr6_begin = opt_dstaddr6_end = interface[0].ip6addr;
-
-				rc = addresslist_append6(interface[1].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
-				    &opt_srcaddr6_begin, &opt_srcaddr6_end,
-				    &opt_dstaddr6_begin, &opt_dstaddr6_end,
-				    opt_srcport_begin, opt_srcport_end,
-				    opt_dstport_begin, opt_dstport_end);
-				if (rc != 0)
-					exit(1);
-
-				rc = addresslist_append6(interface[0].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
-				    &opt_dstaddr6_begin, &opt_dstaddr6_end,
-				    &opt_srcaddr6_begin, &opt_srcaddr6_end,
-				    opt_dstport_begin, opt_dstport_end,
-				    opt_srcport_begin, opt_srcport_end);
-				if (rc != 0)
-					exit(1);
-			}
-
-		} else if (opt_allnet) {
-
-			if (!ipv4_iszero(&interface[0].ipaddr) && !ipv4_iszero(&interface[1].ipaddr)) {
-				/* exclude hostzero address and gw address and broadcast address */
-				xaddr.s_addr = interface[0].ipaddr.s_addr | ~interface[0].ipaddr_mask.s_addr;	/* broadcast */
-				addresslist_exclude_daddr(interface[1].adrlist, xaddr);
-				xaddr.s_addr = interface[0].ipaddr.s_addr & interface[0].ipaddr_mask.s_addr;	/* hostzero */
-				addresslist_exclude_daddr(interface[1].adrlist, xaddr);
-				xaddr.s_addr = interface[0].gwaddr.s_addr;					/* gw address */
-				addresslist_exclude_daddr(interface[1].adrlist, xaddr);
-
-				xaddr.s_addr = interface[1].ipaddr.s_addr | ~interface[1].ipaddr_mask.s_addr;	/* broadcast */
-				addresslist_exclude_daddr(interface[0].adrlist, xaddr);
-				xaddr.s_addr = interface[1].ipaddr.s_addr & interface[1].ipaddr_mask.s_addr;	/* hostzero */
-				addresslist_exclude_daddr(interface[0].adrlist, xaddr);
-				xaddr.s_addr = interface[1].gwaddr.s_addr;					/* gw address */
-				addresslist_exclude_daddr(interface[0].adrlist, xaddr);
-
-				xaddr.s_addr = interface[0].ipaddr.s_addr | ~interface[0].ipaddr_mask.s_addr;	/* broadcast */
-				rc = addresslist_append(interface[1].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
-				    interface[1].ipaddr, interface[1].ipaddr,
-				    interface[0].ipaddr, xaddr,
-				    opt_srcport_begin, opt_srcport_end,
-				    opt_dstport_begin, opt_dstport_end);
-				if (rc != 0)
-					exit(1);
-
-				xaddr.s_addr = interface[1].ipaddr.s_addr | ~interface[0].ipaddr_mask.s_addr;	/* broadcast */
-				rc = addresslist_append(interface[0].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
-				    interface[0].ipaddr, interface[0].ipaddr,
-				    interface[1].ipaddr, xaddr,
-				    opt_dstport_begin, opt_dstport_end,
-				    opt_srcport_begin, opt_srcport_end);
-				if (rc != 0)
-					exit(1);
-
-			} else if (!ipv6_iszero(&interface[0].ip6addr) && !ipv6_iszero(&interface[1].ip6addr)) {
-				/* exclude gw address */
-				xaddr6 = interface[0].gw6addr;					/* gw address */
-				addresslist_exclude_daddr6(interface[1].adrlist, &xaddr6);
-				xaddr6 = interface[1].gw6addr;					/* gw address */
-				addresslist_exclude_daddr6(interface[0].adrlist, &xaddr6);
-
-				/* e.g.) fd00::1/112 => from fd00:0 to fd00::ffff */
-				xaddr6_begin = interface[0].ip6addr_mask;
-				ipv6_and(&interface[0].ip6addr, &xaddr6_begin, &xaddr6_begin);	/* beginning of network address */
-				ipv6_not(&interface[0].ip6addr_mask, &xaddr6);
-				ipv6_or(&interface[0].ip6addr, &xaddr6, &xaddr6);	/* end of network address */
-				rc = addresslist_append6(interface[1].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
-				    &interface[1].ip6addr, &interface[1].ip6addr,
-				    &xaddr6_begin, &xaddr6,
-				    opt_srcport_begin, opt_srcport_end,
-				    opt_dstport_begin, opt_dstport_end);
-				if (rc != 0)
-					exit(1);
-
-				xaddr6_begin = interface[1].ip6addr_mask;
-				ipv6_and(&interface[1].ip6addr, &xaddr6_begin, &xaddr6_begin);	/* beginning of network address */
-				ipv6_not(&interface[1].ip6addr_mask, &xaddr6);
-				ipv6_or(&interface[1].ip6addr, &xaddr6, &xaddr6);	/* last of network address */
-				rc = addresslist_append6(interface[0].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
-				    &interface[0].ip6addr, &interface[0].ip6addr,
-				    &xaddr6_begin, &xaddr6,
-				    opt_dstport_begin, opt_dstport_end,
-				    opt_srcport_begin, opt_srcport_end);
-				if (rc != 0)
-					exit(1);
-
-			} else {
-				fprintf(stderr, "no address info on %s and %s\n",
-				    interface[0].ifname, interface[1].ifname);
-				exit(1);
-			}
-
-		} else {
-			if (!ipv4_iszero(&interface[0].ipaddr) && !ipv4_iszero(&interface[1].ipaddr)) {
-				rc = addresslist_append(interface[1].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
-				    interface[1].ipaddr, interface[1].ipaddr,
-				    interface[0].ipaddr, interface[0].ipaddr,
-				    opt_srcport_begin, opt_srcport_end,
-				    opt_dstport_begin, opt_dstport_end);
-				if (rc != 0)
-					exit(1);
-
-				rc = addresslist_append(interface[0].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
-				    interface[0].ipaddr, interface[0].ipaddr,
-				    interface[1].ipaddr, interface[1].ipaddr,
-				    opt_srcport_begin, opt_srcport_end,
-				    opt_dstport_begin, opt_dstport_end);
-				if (rc != 0)
-					exit(1);
-
-			} else if (!ipv6_iszero(&interface[0].ip6addr) && !ipv6_iszero(&interface[1].ip6addr)) {
-				rc = addresslist_append6(interface[1].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
-				    &interface[1].ip6addr, &interface[1].ip6addr,
-				    &interface[0].ip6addr, &interface[0].ip6addr,
-				    opt_srcport_begin, opt_srcport_end,
-				    opt_dstport_begin, opt_dstport_end);
-				if (rc != 0)
-					exit(1);
-
-				rc = addresslist_append6(interface[0].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
-				    &interface[0].ip6addr, &interface[0].ip6addr,
-				    &interface[1].ip6addr, &interface[1].ip6addr,
-				    opt_srcport_begin, opt_srcport_end,
-				    opt_dstport_begin, opt_dstport_end);
-				if (rc != 0)
-					exit(1);
-			} else {
-				/* no address information. use 0.0.0.0-0.0.0.0 */
-				rc = addresslist_append(interface[1].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
-				    interface[1].ipaddr, interface[1].ipaddr,
-				    interface[0].ipaddr, interface[0].ipaddr,
-				    opt_srcport_begin, opt_srcport_end,
-				    opt_dstport_begin, opt_dstport_end);
-				if (rc != 0)
-					exit(1);
-
-				rc = addresslist_append(interface[0].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP,
-				    interface[0].ipaddr, interface[0].ipaddr,
-				    interface[1].ipaddr, interface[1].ipaddr,
-				    opt_srcport_begin, opt_srcport_end,
-				    opt_dstport_begin, opt_dstport_end);
-				if (rc != 0)
-					exit(1);
-			}
-		}
+		/* Generate interface[].adrlist based on specified addresses and options */
+		generate_addrlists();
 	}
 
 	if (addresslist_include_af(interface[0].adrlist, AF_INET6) ||
