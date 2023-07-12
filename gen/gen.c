@@ -349,10 +349,10 @@ struct interface {
 
 } interface[2];
 
-static char pktbuffer_ipv4_udp[2][LIBPKT_PKTBUFSIZE] __attribute__((__aligned__(8)));
-static char pktbuffer_ipv4_tcp[2][LIBPKT_PKTBUFSIZE] __attribute__((__aligned__(8)));
-static char pktbuffer_ipv6_udp[2][LIBPKT_PKTBUFSIZE] __attribute__((__aligned__(8)));
-static char pktbuffer_ipv6_tcp[2][LIBPKT_PKTBUFSIZE] __attribute__((__aligned__(8)));
+static char pktbuffer_ipv4[2][2][LIBPKT_PKTBUFSIZE] __attribute__((__aligned__(8)));
+static char pktbuffer_ipv6[2][2][LIBPKT_PKTBUFSIZE] __attribute__((__aligned__(8)));
+#define PKTBUF_UDP	0
+#define PKTBUF_TCP	1
 
 struct ifflag {
 	const char drvname[IFNAMSIZ];
@@ -514,26 +514,15 @@ touchup_tx_packet(char *buf, int ifno)
 		addresslist_get_tuple_next(iface->adrlist);
 
 		if (tuple->saddr.af == AF_INET) {
+			int proto = opt_udp ? PKTBUF_UDP : PKTBUF_TCP;
 			if (iface->vlan_id) {
-				if (opt_udp) {
-					pktcpy_vlan(buf, pktbuffer_ipv4_udp[ifno], iface->pktsize + ETHHDRSIZE, iface->vlan_id);
-				} else {
-					pktcpy_vlan(buf, pktbuffer_ipv4_tcp[ifno], iface->pktsize + ETHHDRSIZE, iface->vlan_id);
-				}
+				pktcpy_vlan(buf, pktbuffer_ipv4[proto][ifno], iface->pktsize + ETHHDRSIZE, iface->vlan_id);
 #ifdef SUPPORT_PPPOE
 			} else if (iface->pppoe) {
-				if (opt_udp) {
-					pktcpy_pppoe(buf, pktbuffer_ipv4_udp[ifno], iface->pktsize + ETHHDRSIZE, iface->pppoe_sc.session, PPP_IP);
-				} else {
-					pktcpy_pppoe(buf, pktbuffer_ipv4_tcp[ifno], iface->pktsize + ETHHDRSIZE, iface->pppoe_sc.session, PPP_IP);
-				}
+				pktcpy_pppoe(buf, pktbuffer_ipv4[proto][ifno], iface->pktsize + ETHHDRSIZE, iface->pppoe_sc.session, PPP_IP);
 #endif
 			} else {
-				if (opt_udp) {
-					memcpy(buf, pktbuffer_ipv4_udp[ifno], iface->pktsize + ETHHDRSIZE);
-				} else {
-					memcpy(buf, pktbuffer_ipv4_tcp[ifno], iface->pktsize + ETHHDRSIZE);
-				}
+				memcpy(buf, pktbuffer_ipv4[proto][ifno], iface->pktsize + ETHHDRSIZE);
 			}
 
 			ip4pkt_src(buf, l3offset, tuple->saddr.a.addr4.s_addr);
@@ -548,24 +537,15 @@ touchup_tx_packet(char *buf, int ifno)
 
 			ipv6 = 0;
 		} else {
+			int proto = opt_udp ? PKTBUF_UDP : PKTBUF_TCP;
 			if (iface->vlan_id) {
-				if (opt_udp)
-					pktcpy_vlan(buf, pktbuffer_ipv6_udp[ifno], iface->pktsize + ETHHDRSIZE, iface->vlan_id);
-				else
-					pktcpy_vlan(buf, pktbuffer_ipv6_tcp[ifno], iface->pktsize + ETHHDRSIZE, iface->vlan_id);
+				pktcpy_vlan(buf, pktbuffer_ipv6[proto][ifno], iface->pktsize + ETHHDRSIZE, iface->vlan_id);
 #ifdef SUPPORT_PPPOE
 			} else if (iface->pppoe) {
-				if (opt_udp) {
-					pktcpy_pppoe(buf, pktbuffer_ipv6_udp[ifno], iface->pktsize + ETHHDRSIZE, iface->pppoe_sc.session, PPP_IPV6);
-				} else {
-					pktcpy_pppoe(buf, pktbuffer_ipv6_tcp[ifno], iface->pktsize + ETHHDRSIZE, iface->pppoe_sc.session, PPP_IPV6);
-				}
+				pktcpy_pppoe(buf, pktbuffer_ipv6[proto][ifno], iface->pktsize + ETHHDRSIZE, iface->pppoe_sc.session, PPP_IPV6);
 #endif
 			} else {
-				if (opt_udp)
-					memcpy(buf, pktbuffer_ipv6_udp[ifno], iface->pktsize + ETHHDRSIZE);
-				else
-					memcpy(buf, pktbuffer_ipv6_tcp[ifno], iface->pktsize + ETHHDRSIZE);
+				memcpy(buf, pktbuffer_ipv6[proto][ifno], iface->pktsize + ETHHDRSIZE);
 			}
 
 			ip6pkt_src(buf, l3offset, &tuple->saddr.a.addr6);
@@ -3506,16 +3486,16 @@ gentest_main(void)
 		printf(" with CKSUM test");
 	printf(" start\n");
 
-	ip4pkt_udp_template(pktbuffer_ipv4_udp[0], 1500 + ETHHDRSIZE);
-	build_template_packet_ipv4(0, pktbuffer_ipv4_udp[0]);
+	ip4pkt_udp_template(pktbuffer_ipv4[PKTBUF_UDP][0], 1500 + ETHHDRSIZE);
+	build_template_packet_ipv4(0, pktbuffer_ipv4[PKTBUF_UDP][0]);
 
 	for (;;) {
 		clock_gettime(CLOCK_MONOTONIC, &currenttime_main);
 
-		touchup_tx_packet(pktbuffer_ipv4_udp[0], 0);
+		touchup_tx_packet(pktbuffer_ipv4[PKTBUF_UDP][0], 0);
 
 		if (opt_gentest >= 2)
-			memcpy(tmppktbuf, pktbuffer_ipv4_udp[0], interface[0].pktsize + ETHHDRSIZE);
+			memcpy(tmppktbuf, pktbuffer_ipv4[PKTBUF_UDP][0], interface[0].pktsize + ETHHDRSIZE);
 		if (opt_gentest >= 3)
 			ip4pkt_test_cksum(tmppktbuf, sizeof(struct ether_header), interface[0].pktsize + ETHHDRSIZE);
 
@@ -4471,14 +4451,14 @@ main(int argc, char *argv[])
 
 
 	for (i = 0; i < 2; i++) {
-		ip4pkt_udp_template(pktbuffer_ipv4_udp[i], 1500 + ETHHDRSIZE);
-		build_template_packet_ipv4(i, pktbuffer_ipv4_udp[i]);
-		ip4pkt_tcp_template(pktbuffer_ipv4_tcp[i], 1500 + ETHHDRSIZE);
-		build_template_packet_ipv4(i, pktbuffer_ipv4_tcp[i]);
-		ip6pkt_udp_template(pktbuffer_ipv6_udp[i], 1500 + ETHHDRSIZE);
-		build_template_packet_ipv6(i, pktbuffer_ipv6_udp[i]);
-		ip6pkt_tcp_template(pktbuffer_ipv6_tcp[i], 1500 + ETHHDRSIZE);
-		build_template_packet_ipv6(i, pktbuffer_ipv6_tcp[i]);
+		ip4pkt_udp_template(pktbuffer_ipv4[PKTBUF_UDP][i], 1500 + ETHHDRSIZE);
+		build_template_packet_ipv4(i, pktbuffer_ipv4[PKTBUF_UDP][i]);
+		ip4pkt_tcp_template(pktbuffer_ipv4[PKTBUF_TCP][i], 1500 + ETHHDRSIZE);
+		build_template_packet_ipv4(i, pktbuffer_ipv4[PKTBUF_TCP][i]);
+		ip6pkt_udp_template(pktbuffer_ipv6[PKTBUF_UDP][i], 1500 + ETHHDRSIZE);
+		build_template_packet_ipv6(i, pktbuffer_ipv6[PKTBUF_UDP][i]);
+		ip6pkt_tcp_template(pktbuffer_ipv6[PKTBUF_TCP][i], 1500 + ETHHDRSIZE);
+		build_template_packet_ipv6(i, pktbuffer_ipv6[PKTBUF_TCP][i]);
 	}
 
 	if (!opt_txonly) {
