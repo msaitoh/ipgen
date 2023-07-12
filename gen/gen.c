@@ -255,7 +255,7 @@ struct interface {
 	char twiddle[32];
 	int promisc_save;
 
-	struct {
+	struct interface_statistics {
 		uint64_t tx_last;
 		uint64_t rx_last;
 		uint64_t tx_delta;
@@ -308,7 +308,7 @@ struct interface {
 		double latency_avg;
 		double latency_sum;		/* for avg */
 		uint64_t latency_npkt;		/* for avg */
-	} counter;
+	} stats;
 
 	struct addresslist *adrlist;
 
@@ -1338,7 +1338,7 @@ interface_load_transmit_packet(int ifno, char *buf, uint16_t *lenp)
 		*lenp = p->len;
 		pbuf_free(p);
 
-		iface->counter.tx_other++;
+		iface->stats.tx_other++;
 
 		return 2;	/* control packet */
 
@@ -1541,6 +1541,7 @@ void
 receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 {
 	struct interface *iface = &interface[ifno];
+	struct interface_statistics *ifstats = &iface->stats;
 	int is_ipv6 = 0;
 	struct ether_header *eth;
 	struct ip *ip;
@@ -1548,11 +1549,11 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 	int l3_offset;
 	uint16_t type;
 
-	iface->counter.rx++;
+	ifstats->rx++;
 	if (opt_bps_include_preamble)
-		iface->counter.rx_byte += len + DEFAULT_IFG + DEFAULT_PREAMBLE + FCS;
+		ifstats->rx_byte += len + DEFAULT_IFG + DEFAULT_PREAMBLE + FCS;
 	else
-		iface->counter.rx_byte += len + FCS;
+		ifstats->rx_byte += len + FCS;
 
 	eth = (struct ether_header *)buf;
 	type = ntohs(eth->ether_type);
@@ -1567,7 +1568,7 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 	switch (type) {
 	case ETHERTYPE_FLOWCONTROL:
 		/* ignore FLOWCONTROL */
-		iface->counter.rx_flow++;
+		ifstats->rx_flow++;
 		return;
 #ifdef SUPPORT_PPPOE
 	case ETHERTYPE_PPPOE:
@@ -1584,13 +1585,13 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 		}
 		l3_offset = sizeof(struct pppoe_l2) + 2;
 		if (pppoe_handler(ifno, buf) != 0) {
-			iface->counter.rx_arp++;
+			ifstats->rx_arp++;
 			return;
 		}
 		break;
 #endif
 	case ETHERTYPE_ARP:
-		iface->counter.rx_arp++;
+		ifstats->rx_arp++;
 		arp_handler(ifno, buf, l3_offset);
 		return;
 	case ETHERTYPE_IP:
@@ -1600,7 +1601,7 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 		is_ipv6 = 1;
 		break;
 	default:
-		iface->counter.rx_other++;
+		ifstats->rx_other++;
 		if (opt_debuglevel > 0) {
 			printf("\r\n\r\n\r\n\r\n\r\n\r\n==== %s: len=%d ====\r\n", iface->ifname, len);
 			dumpstr(buf, len, DUMPSTR_FLAGS_CRLF);
@@ -1614,29 +1615,29 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 		if (ip6->ip6_nxt == IPPROTO_ICMPV6) {
 			struct icmp6_hdr *icmp6 = (struct icmp6_hdr *)(ip6 + 1);	/* XXX: no support extension header */
 
-			iface->counter.rx_icmp++;
+			ifstats->rx_icmp++;
 
 			switch (icmp6->icmp6_type) {
 			case ICMP6_DST_UNREACH:
-				iface->counter.rx_icmpunreach++;
+				ifstats->rx_icmpunreach++;
 				return;
 			case ND_REDIRECT:
-				iface->counter.rx_icmpredirect++;
+				ifstats->rx_icmpredirect++;
 				return;
 			case ICMP6_ECHO_REQUEST:
-				iface->counter.rx_icmpecho++;
+				ifstats->rx_icmpecho++;
 #if NOTYET
 				icmp6echo_handler(ifno, buf, len, l3_offset);
 #endif
 				return;
 
 			case ND_NEIGHBOR_SOLICIT:
-				iface->counter.rx_arp++;
+				ifstats->rx_arp++;
 				ndp_handler(ifno, buf, l3_offset);
 				return;
 
 			default:
-				iface->counter.rx_icmpother++;
+				ifstats->rx_icmpother++;
 				printf("icmp6 receive: type=%d, code=%d\n",
 				    icmp6->icmp6_type, icmp6->icmp6_code);
 				return;
@@ -1648,21 +1649,21 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 		if (ip->ip_p == IPPROTO_ICMP) {
 			struct icmp *icmp = (struct icmp *)((char *)ip + ip->ip_hl * 4);
 
-			iface->counter.rx_icmp++;
+			ifstats->rx_icmp++;
 
 			switch (icmp->icmp_type) {
 			case ICMP_UNREACH:
-				iface->counter.rx_icmpunreach++;
+				ifstats->rx_icmpunreach++;
 				return;
 			case ICMP_REDIRECT:
-				iface->counter.rx_icmpredirect++;
+				ifstats->rx_icmpredirect++;
 				return;
 			case ICMP_ECHO:
-				iface->counter.rx_icmpecho++;
+				ifstats->rx_icmpecho++;
 				icmpecho_handler(ifno, buf, len, l3_offset);
 				return;
 			default:
-				iface->counter.rx_icmpother++;
+				ifstats->rx_icmpother++;
 				printf("icmp receive: type=%d, code=%d, l3offset=%d\n",
 				    icmp->icmp_type, icmp->icmp_code, l3_offset);
 				return;
@@ -1681,7 +1682,7 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 	seqdata = (struct seqdata *)(buf + len - sizeof(struct seqdata));
 	if (seqdata->magic != seq_magic) {
 		/* no ipgen packet? */
-		iface->counter.rx_other++;
+		ifstats->rx_other++;
 		return;
 	}
 
@@ -1689,23 +1690,23 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 	seqrecord = seqtable_get(iface->seqtable, seq);
 
 	if ((seqrecord == NULL) || seqrecord->seq != seq) {
-		iface->counter.rx_expire++;
+		ifstats->rx_expire++;
 	} else {
 		timespecsub(curtime, &seqrecord->ts, &ts_delta);
 		ts_delta.tv_sec &= 0xff;
 		latency = ts_delta.tv_sec / 1000 + ts_delta.tv_nsec / 1000000.0;
 
-		iface->counter.latency_sum += latency;
-		iface->counter.latency_npkt++;
-		iface->counter.latency_avg =
-		    iface->counter.latency_sum / 
-		    iface->counter.latency_npkt;
+		ifstats->latency_sum += latency;
+		ifstats->latency_npkt++;
+		ifstats->latency_avg =
+		    ifstats->latency_sum / 
+		    ifstats->latency_npkt;
 
-		if ((iface->counter.latency_min == 0) ||
-		    (iface->counter.latency_min > latency))
-			iface->counter.latency_min = latency;
-		if (iface->counter.latency_max < latency)
-			iface->counter.latency_max = latency;
+		if ((ifstats->latency_min == 0) ||
+		    (ifstats->latency_min > latency))
+			ifstats->latency_min = latency;
+		if (ifstats->latency_max < latency)
+			ifstats->latency_max = latency;
 
 		flowid = seqrecord->flowid;
 		seqflow = seqrecord->flowseq;
@@ -1787,6 +1788,7 @@ int
 interface_transmit(int ifno)
 {
 	struct interface *iface = &interface[ifno];
+	struct interface_statistics *ifstats = &iface->stats;
 #ifdef USE_NETMAP
 	char *buf;
 	unsigned int cur, nspace, npkt, n;
@@ -1825,10 +1827,10 @@ interface_transmit(int ifno)
 			txring->slot[cur].flags = 0;
 
 			if (opt_bps_include_preamble)
-				iface->counter.tx_byte += txring->slot[cur].len + DEFAULT_IFG + DEFAULT_PREAMBLE + FCS;
+				ifstats->tx_byte += txring->slot[cur].len + DEFAULT_IFG + DEFAULT_PREAMBLE + FCS;
 			else
-				iface->counter.tx_byte += txring->slot[cur].len + FCS;
-			iface->counter.tx++;
+				ifstats->tx_byte += txring->slot[cur].len + FCS;
+			ifstats->tx++;
 		}
 		txring->head = txring->cur = cur;
 #ifdef USE_MULTI_TX_QUEUE
@@ -1856,10 +1858,10 @@ interface_transmit(int ifno)
 		if (sentpkttype < 0)
 			break;
 		if (opt_bps_include_preamble)
-			iface->counter.tx_byte += *lenp + DEFAULT_IFG + DEFAULT_PREAMBLE + FCS;
+			ifstats->tx_byte += *lenp + DEFAULT_IFG + DEFAULT_PREAMBLE + FCS;
 		else
-			iface->counter.tx_byte += *lenp + FCS;
-		iface->counter.tx++;
+			ifstats->tx_byte += *lenp + FCS;
+		ifstats->tx++;
 	}
 
 	ax_complete_tx(iface->ax_desc, npkt);
@@ -1887,6 +1889,7 @@ static int
 interface_statistics_json(int ifno, char *buf, int buflen)
 {
 	struct interface *iface = &interface[ifno];
+	struct interface_statistics *ifstats = &iface->stats;
 	char buf_ipaddr[INET_ADDRSTRLEN], buf_eaddr[sizeof("00:00:00:00:00:00")];
 	char buf_gwaddr[INET_ADDRSTRLEN], buf_gweaddr[sizeof("00:00:00:00:00:00")];
 
@@ -1942,35 +1945,35 @@ interface_statistics_json(int ifno, char *buf, int buflen)
 	    buf_eaddr,
 	    buf_gwaddr,
 	    buf_gweaddr,
-	    iface->counter.tx,
-	    iface->counter.rx,
+	    ifstats->tx,
+	    ifstats->rx,
 	    iface->transmit_pps,
-	    iface->counter.tx_delta,
-	    iface->counter.rx_delta,
-	    iface->counter.tx_byte_delta * 8,
-	    iface->counter.rx_byte_delta * 8,
-	    iface->counter.tx_underrun,
-	    iface->counter.rx_seqdrop,
-	    iface->counter.rx_seqdrop_delta,
-	    iface->counter.rx_dup,
-	    iface->counter.rx_reorder,
+	    ifstats->tx_delta,
+	    ifstats->rx_delta,
+	    ifstats->tx_byte_delta * 8,
+	    ifstats->rx_byte_delta * 8,
+	    ifstats->tx_underrun,
+	    ifstats->rx_seqdrop,
+	    ifstats->rx_seqdrop_delta,
+	    ifstats->rx_dup,
+	    ifstats->rx_reorder,
 
-	    iface->counter.rx_seqdrop_flow,
-	    iface->counter.rx_dup_flow,
-	    iface->counter.rx_reorder_flow,
+	    ifstats->rx_seqdrop_flow,
+	    ifstats->rx_dup_flow,
+	    ifstats->rx_reorder_flow,
 
-	    iface->counter.rx_flow,
-	    iface->counter.rx_arp,
-	    iface->counter.rx_other,
-	    iface->counter.rx_icmp,
-	    iface->counter.rx_icmpecho,
-	    iface->counter.rx_icmpunreach,
-	    iface->counter.rx_icmpredirect,
-	    iface->counter.rx_icmpother,
+	    ifstats->rx_flow,
+	    ifstats->rx_arp,
+	    ifstats->rx_other,
+	    ifstats->rx_icmp,
+	    ifstats->rx_icmpecho,
+	    ifstats->rx_icmpunreach,
+	    ifstats->rx_icmpredirect,
+	    ifstats->rx_icmpother,
 
-	    iface->counter.latency_max,
-	    iface->counter.latency_min,
-	    iface->counter.latency_avg
+	    ifstats->latency_max,
+	    ifstats->latency_min,
+	    ifstats->latency_avg
 	);
 }
 
@@ -2038,69 +2041,70 @@ sighandler_alrm(int signo)
 		/* update dropcounter */
 		for (i = 0; i < 2; i++) {
 			struct interface *iface = &interface[i];
+			struct interface_statistics *ifstats = &iface->stats;
 
 			if (!iface->opened)
 				continue;
 
-			iface->counter.rx_seqdrop =
+			ifstats->rx_seqdrop =
 			    seqcheck_dropcount(iface->seqchecker);
-			iface->counter.rx_dup =
+			ifstats->rx_dup =
 			    seqcheck_dupcount(iface->seqchecker);
-			iface->counter.rx_reorder =
+			ifstats->rx_reorder =
 			    seqcheck_reordercount(iface->seqchecker);
 
-			iface->counter.rx_seqdrop_flow =
+			ifstats->rx_seqdrop_flow =
 			    seqcheck_dropcount(iface->seqchecker_flowtotal);
-			iface->counter.rx_dup_flow =
+			ifstats->rx_dup_flow =
 			    seqcheck_dupcount(iface->seqchecker_flowtotal);
-			iface->counter.rx_reorder_flow =
+			ifstats->rx_reorder_flow =
 			    seqcheck_reordercount(iface->seqchecker_flowtotal);
 
 
 			/* update delta */
-			iface->counter.tx_delta = iface->counter.tx - iface->counter.tx_last;
-			iface->counter.tx_last = iface->counter.tx;
-			iface->counter.rx_delta = iface->counter.rx - iface->counter.rx_last;
-			iface->counter.rx_last = iface->counter.rx;
+			ifstats->tx_delta = ifstats->tx - ifstats->tx_last;
+			ifstats->tx_last = ifstats->tx;
+			ifstats->rx_delta = ifstats->rx - ifstats->rx_last;
+			ifstats->rx_last = ifstats->rx;
 
-			iface->counter.tx_byte_delta = iface->counter.tx_byte - iface->counter.tx_byte_last;
-			iface->counter.tx_byte_last = iface->counter.tx_byte;
-			iface->counter.rx_byte_delta = iface->counter.rx_byte - iface->counter.rx_byte_last;
-			iface->counter.rx_byte_last = iface->counter.rx_byte;
+			ifstats->tx_byte_delta = ifstats->tx_byte - ifstats->tx_byte_last;
+			ifstats->tx_byte_last = ifstats->tx_byte;
+			ifstats->rx_byte_delta = ifstats->rx_byte - ifstats->rx_byte_last;
+			ifstats->rx_byte_last = ifstats->rx_byte;
 
 #if 0
 			if (opt_bps_include_preamble) {
-				iface->counter.tx_Mbps =
-				    (iface->counter.tx_byte_delta +
-				     (iface->counter.tx_delta * (DEFAULT_IFG + DEFAULT_PREAMBLE + FCS))) *
+				ifstats->tx_Mbps =
+				    (ifstats->tx_byte_delta +
+				     (ifstats->tx_delta * (DEFAULT_IFG + DEFAULT_PREAMBLE + FCS))) *
 				    8.0 / 1000 / 1000;
-				iface->counter.rx_Mbps =
-				    (iface->counter.rx_byte_delta +
-				     (iface->counter.rx_delta * (DEFAULT_IFG + DEFAULT_PREAMBLE + FCS))) *
+				ifstats->rx_Mbps =
+				    (ifstats->rx_byte_delta +
+				     (ifstats->rx_delta * (DEFAULT_IFG + DEFAULT_PREAMBLE + FCS))) *
 				    8.0 / 1000 / 1000;
 			} else {
-				iface->counter.tx_Mbps = (iface->counter.tx_byte_delta + FCS) * 8.0 / 1000 / 1000;
-				iface->counter.rx_Mbps = (iface->counter.rx_byte_delta + FCS) * 8.0 / 1000 / 1000;
+				ifstats->tx_Mbps = (ifstats->tx_byte_delta + FCS) * 8.0 / 1000 / 1000;
+				ifstats->rx_Mbps = (ifstats->rx_byte_delta + FCS) * 8.0 / 1000 / 1000;
 			}
 #else
-			iface->counter.tx_Mbps = (iface->counter.tx_byte_delta) * 8.0 / 1000 / 1000;
-			iface->counter.rx_Mbps = (iface->counter.rx_byte_delta) * 8.0 / 1000 / 1000;
+			ifstats->tx_Mbps = (ifstats->tx_byte_delta) * 8.0 / 1000 / 1000;
+			ifstats->rx_Mbps = (ifstats->rx_byte_delta) * 8.0 / 1000 / 1000;
 #endif
 
 
-			iface->counter.rx_seqdrop_delta = iface->counter.rx_seqdrop - iface->counter.rx_seqdrop_last;
-			iface->counter.rx_seqdrop_last = iface->counter.rx_seqdrop;
-			iface->counter.rx_dup_delta = iface->counter.rx_dup - iface->counter.rx_dup_last;
-			iface->counter.rx_dup_last = iface->counter.rx_dup;
-			iface->counter.rx_reorder_delta = iface->counter.rx_reorder - iface->counter.rx_reorder_last;
-			iface->counter.rx_reorder_last = iface->counter.rx_reorder;
+			ifstats->rx_seqdrop_delta = ifstats->rx_seqdrop - ifstats->rx_seqdrop_last;
+			ifstats->rx_seqdrop_last = ifstats->rx_seqdrop;
+			ifstats->rx_dup_delta = ifstats->rx_dup - ifstats->rx_dup_last;
+			ifstats->rx_dup_last = ifstats->rx_dup;
+			ifstats->rx_reorder_delta = ifstats->rx_reorder - ifstats->rx_reorder_last;
+			ifstats->rx_reorder_last = ifstats->rx_reorder;
 
-			iface->counter.rx_seqdrop_flow_delta = iface->counter.rx_seqdrop_flow - iface->counter.rx_seqdrop_flow_last;
-			iface->counter.rx_seqdrop_flow_last = iface->counter.rx_seqdrop_flow;
-			iface->counter.rx_dup_flow_delta = iface->counter.rx_dup_flow - iface->counter.rx_dup_flow_last;
-			iface->counter.rx_dup_flow_last = iface->counter.rx_dup_flow;
-			iface->counter.rx_reorder_flow_delta = iface->counter.rx_reorder_flow - iface->counter.rx_reorder_flow_last;
-			iface->counter.rx_reorder_flow_last = iface->counter.rx_reorder_flow;
+			ifstats->rx_seqdrop_flow_delta = ifstats->rx_seqdrop_flow - ifstats->rx_seqdrop_flow_last;
+			ifstats->rx_seqdrop_flow_last = ifstats->rx_seqdrop_flow;
+			ifstats->rx_dup_flow_delta = ifstats->rx_dup_flow - ifstats->rx_dup_flow_last;
+			ifstats->rx_dup_flow_last = ifstats->rx_dup_flow;
+			ifstats->rx_reorder_flow_delta = ifstats->rx_reorder_flow - ifstats->rx_reorder_flow_last;
+			ifstats->rx_reorder_flow_last = ifstats->rx_reorder_flow;
 		}
 
 		/* need to update statistics string buffer in json? */
@@ -2115,11 +2119,12 @@ sighandler_alrm(int signo)
 	/* check and reset tx pps counter atomically */
 	for (i = 0; i < 2; i++) {
 		struct interface *iface = &interface[i];
+		struct interface_statistics *ifstats = &iface->stats;
 		x = ((uint64_t)iface->transmit_pps * ((uint64_t)nhz + 1) / pps_hz) -
 		    ((uint64_t)iface->transmit_pps * ((uint64_t)nhz) / pps_hz);
 		if (iface->transmit_enable &&
 		    ((x = atomic_swap_32(&iface->transmit_txhz, x)) != 0)) {
-			atomic_add_64(&iface->counter.tx_underrun, x);
+			atomic_add_64(&ifstats->tx_underrun, x);
 		}
 	}
 
@@ -2306,7 +2311,7 @@ tx_thread_main(void *arg)
 	while (do_quit == 0) {
 		if (iface->need_reset_statistics) {
 			iface->need_reset_statistics = 0;
-			memset(&iface->counter, 0, sizeof(iface->counter));
+			memset(&iface->stats, 0, sizeof(iface->stats));
 			seqcheck_clear(iface->seqchecker);
 			seqcheck_clear(iface->seqchecker_flowtotal);
 			j = get_flownum(ifno);
@@ -2388,7 +2393,7 @@ genscript_play(int unsigned n)
 
 			switch (genitem->cmd) {
 			case GENITEM_CMD_RESET:
-				logging("script: reset counters");
+				logging("script: reset ifstats");
 				statistics_clear();
 				break;
 			case GENITEM_CMD_NOP:
@@ -2925,21 +2930,21 @@ rfc2544_test(int unsigned n)
 		measure_done = 0;
 		do_down_pps = 0;
 
-		if ((interface[0].counter.rx != 0) &&
-		    (((interface[0].counter.rx_seqdrop * 100.0) / interface[0].counter.rx) > opt_rfc2544_tolerable_error_rate)) {
+		if ((interface[0].stats.rx != 0) &&
+		    (((interface[0].stats.rx_seqdrop * 100.0) / interface[0].stats.rx) > opt_rfc2544_tolerable_error_rate)) {
 
 			do_down_pps = 1;
 			DEBUGLOG("RFC2544: pktsize=%d, pps=%d (%.2fMbps), rx=%"PRIu64", drop=%"PRIu64", drop-rate=%.3f\n",
 			    work->pktsize,
 			    work->curpps,
 			    calc_mbps(work->pktsize, work->curpps),
-			    interface[0].counter.rx,
-			    interface[0].counter.rx_seqdrop,
-			    interface[0].counter.rx_seqdrop * 100.0 / interface[0].counter.rx);
+			    interface[0].stats.rx,
+			    interface[0].stats.rx_seqdrop,
+			    interface[0].stats.rx_seqdrop * 100.0 / interface[0].stats.rx);
 			DEBUGLOG("RFC2544: down pps\n");
 
 		} else if (timespeccmp(&currenttime_main, &statetime, >)) {
-			if (interface[0].counter.rx == 0) {
+			if (interface[0].stats.rx == 0) {
 				do_down_pps = 1;
 				DEBUGLOG("RFC2544: pktsize=%d, pps=%d, no packet received. down pps\n",
 				    work->pktsize,
@@ -2948,20 +2953,20 @@ rfc2544_test(int unsigned n)
 				/* pause frame workaround */
 				const uint64_t pause_detect_threshold = 10000; /* XXXX */
 				DEBUGLOG("RFC2544: tx_underrun=%lu, pause_detect_threshold=%lu, tx=%lu, tolerable_error_rate=%.4f\n",
-				    interface[1].counter.tx_underrun, pause_detect_threshold, interface[1].counter.tx, opt_rfc2544_tolerable_error_rate);
-				if (interface[1].counter.tx_underrun > pause_detect_threshold
-				    && (((interface[1].counter.tx_underrun * 100.0) / interface[1].counter.tx)
+				    interface[1].stats.tx_underrun, pause_detect_threshold, interface[1].stats.tx, opt_rfc2544_tolerable_error_rate);
+				if (interface[1].stats.tx_underrun > pause_detect_threshold
+				    && (((interface[1].stats.tx_underrun * 100.0) / interface[1].stats.tx)
 					> opt_rfc2544_tolerable_error_rate)) {
 					do_down_pps = 1;
 					DEBUGLOG("RFC2544: pktsize=%d, pps=%d, pause frame workaround. down pps\n",
 					    work->pktsize,
 					    work->curpps);
-				} else if ((interface[0].counter.rx * 100.0 / interface[1].counter.tx) < opt_rfc2544_tolerable_error_rate) {
+				} else if ((interface[0].stats.rx * 100.0 / interface[1].stats.tx) < opt_rfc2544_tolerable_error_rate) {
 					do_down_pps = 1;
 					DEBUGLOG("RFC2544: pktsize=%d, pps=%d, tx=%"PRIu64", rx=%"PRIu64", enough packets not received. down pps\n",
 					    work->pktsize,
 					    work->curpps,
-					    interface[1].counter.tx, interface[0].counter.rx);
+					    interface[1].stats.tx, interface[0].stats.rx);
 				} else {
 					/* no drop. OK! */
 					measure_done = rfc2544_up_pps();
@@ -3030,10 +3035,10 @@ nocurses_update(void)
 
 #define IF_UPDATE(a, b)	if (((a) != (b)) && (((a) = (b)), nupdate++, 1))
 	for (i = 0; i < 2; i++) {
-		IF_UPDATE(output_last[i].drop, interface[i].counter.rx_seqdrop)
-			logging("%s.drop=%lu", interface[i].ifname, interface[i].counter.rx_seqdrop);
-		IF_UPDATE(output_last[i].drop_flow, interface[i].counter.rx_seqdrop_flow)
-			logging("%s.drop-perflow=%lu", interface[i].ifname, interface[i].counter.rx_seqdrop_flow);
+		IF_UPDATE(output_last[i].drop, interface[i].stats.rx_seqdrop)
+			logging("%s.drop=%lu", interface[i].ifname, interface[i].stats.rx_seqdrop);
+		IF_UPDATE(output_last[i].drop_flow, interface[i].stats.rx_seqdrop_flow)
+			logging("%s.drop-perflow=%lu", interface[i].ifname, interface[i].stats.rx_seqdrop_flow);
 	}
 #endif
 }
@@ -3276,60 +3281,63 @@ control_init_items(struct itemlist *itemlist)
 	REG(TWIDDLE0, NULL, interface[0].twiddle);
 	REG(TWIDDLE1, NULL, interface[1].twiddle);
 
-	REG(IF0_TX, NULL, &interface[0].counter.tx);
-	REG(IF1_TX, NULL, &interface[1].counter.tx);
-	REG(IF0_TX_OTHER, NULL, &interface[0].counter.tx_other);
-	REG(IF1_TX_OTHER, NULL, &interface[1].counter.tx_other);
-	REG(IF0_TX_UNDERRUN, NULL, &interface[0].counter.tx_underrun);
-	REG(IF1_RX_UNDERRUN, NULL, &interface[1].counter.tx_underrun);
-	REG(IF0_RX, NULL, &interface[0].counter.rx);
-	REG(IF1_RX, NULL, &interface[1].counter.rx);
-	REG(IF0_RX_DROP, NULL, &interface[0].counter.rx_seqdrop);
-	REG(IF1_RX_DROP, NULL, &interface[1].counter.rx_seqdrop);
-	REG(IF0_RX_DUP, NULL, &interface[0].counter.rx_dup);
-	REG(IF1_RX_DUP, NULL, &interface[1].counter.rx_dup);
-	REG(IF0_RX_REORDER, NULL, &interface[0].counter.rx_reorder);
-	REG(IF1_RX_REORDER, NULL, &interface[1].counter.rx_reorder);
-	REG(IF0_RX_REORDER_FLOW, NULL, &interface[0].counter.rx_reorder_flow);
-	REG(IF1_RX_REORDER_FLOW, NULL, &interface[1].counter.rx_reorder_flow);
-	REG(IF0_RX_FLOW, NULL, &interface[0].counter.rx_flow);
-	REG(IF1_RX_FLOW, NULL, &interface[1].counter.rx_flow);
-	REG(IF0_RX_ARP, NULL, &interface[0].counter.rx_arp);
-	REG(IF1_RX_ARP, NULL, &interface[1].counter.rx_arp);
-	REG(IF0_RX_ICMP, NULL, &interface[0].counter.rx_icmp);
-	REG(IF1_RX_ICMP, NULL, &interface[1].counter.rx_icmp);
+	struct interface_statistics *ifstats0 = &interface[0].stats;
+	struct interface_statistics *ifstats1 = &interface[1].stats;
+
+	REG(IF0_TX, NULL, &ifstats0->tx);
+	REG(IF1_TX, NULL, &ifstats1->tx);
+	REG(IF0_TX_OTHER, NULL, &ifstats0->tx_other);
+	REG(IF1_TX_OTHER, NULL, &ifstats1->tx_other);
+	REG(IF0_TX_UNDERRUN, NULL, &ifstats0->tx_underrun);
+	REG(IF1_RX_UNDERRUN, NULL, &ifstats1->tx_underrun);
+	REG(IF0_RX, NULL, &ifstats0->rx);
+	REG(IF1_RX, NULL, &ifstats1->rx);
+	REG(IF0_RX_DROP, NULL, &ifstats0->rx_seqdrop);
+	REG(IF1_RX_DROP, NULL, &ifstats1->rx_seqdrop);
+	REG(IF0_RX_DUP, NULL, &ifstats0->rx_dup);
+	REG(IF1_RX_DUP, NULL, &ifstats1->rx_dup);
+	REG(IF0_RX_REORDER, NULL, &ifstats0->rx_reorder);
+	REG(IF1_RX_REORDER, NULL, &ifstats1->rx_reorder);
+	REG(IF0_RX_REORDER_FLOW, NULL, &ifstats0->rx_reorder_flow);
+	REG(IF1_RX_REORDER_FLOW, NULL, &ifstats1->rx_reorder_flow);
+	REG(IF0_RX_FLOW, NULL, &ifstats0->rx_flow);
+	REG(IF1_RX_FLOW, NULL, &ifstats1->rx_flow);
+	REG(IF0_RX_ARP, NULL, &ifstats0->rx_arp);
+	REG(IF1_RX_ARP, NULL, &ifstats1->rx_arp);
+	REG(IF0_RX_ICMP, NULL, &ifstats0->rx_icmp);
+	REG(IF1_RX_ICMP, NULL, &ifstats1->rx_icmp);
 #if 0
-	REG(IF0_RX_ICMPECHO, NULL, &interface[0].counter.rx_icmpecho);
-	REG(IF1_RX_ICMPECHO, NULL, &interface[1].counter.rx_icmpecho);
-	REG(IF0_RX_ICMPUNREACH, NULL, &interface[0].counter.rx_icmpunreach);
-	REG(IF1_RX_ICMPUNREACH, NULL, &interface[1].counter.rx_icmpunreach);
-	REG(IF0_RX_ICMPREDIRECT, NULL, &interface[0].counter.rx_icmpredirect);
-	REG(IF1_RX_ICMPREDIRECT, NULL, &interface[1].counter.rx_icmpredirect);
-	REG(IF0_RX_ICMPOTHER, NULL, &interface[0].counter.rx_icmpother);
-	REG(IF1_RX_ICMPOTHER, NULL, &interface[1].counter.rx_icmpother);
+	REG(IF0_RX_ICMPECHO, NULL, &ifstats0->rx_icmpecho);
+	REG(IF1_RX_ICMPECHO, NULL, &ifstats1->rx_icmpecho);
+	REG(IF0_RX_ICMPUNREACH, NULL, &ifstats0->rx_icmpunreach);
+	REG(IF1_RX_ICMPUNREACH, NULL, &ifstats1->rx_icmpunreach);
+	REG(IF0_RX_ICMPREDIRECT, NULL, &ifstats0->rx_icmpredirect);
+	REG(IF1_RX_ICMPREDIRECT, NULL, &ifstats1->rx_icmpredirect);
+	REG(IF0_RX_ICMPOTHER, NULL, &ifstats0->rx_icmpother);
+	REG(IF1_RX_ICMPOTHER, NULL, &ifstats1->rx_icmpother);
 #endif
-	REG(IF0_RX_OTHER, NULL, &interface[0].counter.rx_other);
-	REG(IF1_RX_OTHER, NULL, &interface[1].counter.rx_other);
+	REG(IF0_RX_OTHER, NULL, &ifstats0->rx_other);
+	REG(IF1_RX_OTHER, NULL, &ifstats1->rx_other);
 
-	REG(IF0_TX_DELTA, NULL, &interface[0].counter.tx_delta);
-	REG(IF1_TX_DELTA, NULL, &interface[1].counter.tx_delta);
-	REG(IF0_TX_BYTE_DELTA, NULL, &interface[0].counter.tx_byte_delta);
-	REG(IF1_TX_BYTE_DELTA, NULL, &interface[1].counter.tx_byte_delta);
-	REG(IF0_TX_MBPS, NULL, &interface[0].counter.tx_Mbps);
-	REG(IF1_TX_MBPS, NULL, &interface[1].counter.tx_Mbps);
-	REG(IF0_RX_DELTA, NULL, &interface[0].counter.rx_delta);
-	REG(IF1_RX_DELTA, NULL, &interface[1].counter.rx_delta);
-	REG(IF0_RX_BYTE_DELTA, NULL, &interface[0].counter.rx_byte_delta);
-	REG(IF1_RX_BYTE_DELTA, NULL, &interface[1].counter.rx_byte_delta);
-	REG(IF0_RX_MBPS, NULL, &interface[0].counter.rx_Mbps);
-	REG(IF1_RX_MBPS, NULL, &interface[1].counter.rx_Mbps);
+	REG(IF0_TX_DELTA, NULL, &ifstats0->tx_delta);
+	REG(IF1_TX_DELTA, NULL, &ifstats1->tx_delta);
+	REG(IF0_TX_BYTE_DELTA, NULL, &ifstats0->tx_byte_delta);
+	REG(IF1_TX_BYTE_DELTA, NULL, &ifstats1->tx_byte_delta);
+	REG(IF0_TX_MBPS, NULL, &ifstats0->tx_Mbps);
+	REG(IF1_TX_MBPS, NULL, &ifstats1->tx_Mbps);
+	REG(IF0_RX_DELTA, NULL, &ifstats0->rx_delta);
+	REG(IF1_RX_DELTA, NULL, &ifstats1->rx_delta);
+	REG(IF0_RX_BYTE_DELTA, NULL, &ifstats0->rx_byte_delta);
+	REG(IF1_RX_BYTE_DELTA, NULL, &ifstats1->rx_byte_delta);
+	REG(IF0_RX_MBPS, NULL, &ifstats0->rx_Mbps);
+	REG(IF1_RX_MBPS, NULL, &ifstats1->rx_Mbps);
 
-	REG(IF0_LATENCY_MIN, NULL, &interface[0].counter.latency_min);
-	REG(IF1_LATENCY_MIN, NULL, &interface[1].counter.latency_min);
-	REG(IF0_LATENCY_MAX, NULL, &interface[0].counter.latency_max);
-	REG(IF1_LATENCY_MAX, NULL, &interface[1].counter.latency_max);
-	REG(IF0_LATENCY_AVG, NULL, &interface[0].counter.latency_avg);
-	REG(IF1_LATENCY_AVG, NULL, &interface[1].counter.latency_avg);
+	REG(IF0_LATENCY_MIN, NULL, &ifstats0->latency_min);
+	REG(IF1_LATENCY_MIN, NULL, &ifstats1->latency_min);
+	REG(IF0_LATENCY_MAX, NULL, &ifstats0->latency_max);
+	REG(IF1_LATENCY_MAX, NULL, &ifstats1->latency_max);
+	REG(IF0_LATENCY_AVG, NULL, &ifstats0->latency_avg);
+	REG(IF1_LATENCY_AVG, NULL, &ifstats1->latency_avg);
 
 	REG(PPS_HZ, NULL, &pps_hz);
 	REG(OPT_NFLOW, itemlist_callback_nflow, &opt_nflow);
