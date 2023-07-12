@@ -1029,9 +1029,7 @@ update_transmit_Mbps(int ifno)
 		iface->pktsize  = 1500;
 
 	if (iface->transmit_enable) {
-		iface->transmit_Mbps = calc_mbps(
-		    iface->pktsize,
-		    (unsigned long long)iface->transmit_pps);
+		iface->transmit_Mbps = calc_mbps(iface->pktsize, iface->transmit_pps);
 	} else {
 		iface->transmit_Mbps = 0.0;
 	}
@@ -1718,11 +1716,8 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 		if (opt_debuglevel > 1) {
 			/* DEBUG */
 			if (nskip > 2) {
-				printf("\r\n\r\n\r\n\r\n\r\n\r\n<seq=%llu, nskip=%llu, tx0=%llu, tx1=%llu>",
-				    (unsigned long long)seq,
-				    (unsigned long long)nskip,
-				    (unsigned long long)interface[0].sequence_tx,
-				    (unsigned long long)interface[1].sequence_tx);
+				printf("\r\n\r\n\r\n\r\n\r\n\r\n<seq=%"PRIu64", nskip=%"PRIu64", tx0=%"PRIu64", tx1=%"PRIu64">",
+				    seq, nskip, interface[0].sequence_tx, interface[1].sequence_tx);
 				dumpstr(buf, len, DUMPSTR_FLAGS_CRLF);
 			}
 		}
@@ -1903,38 +1898,38 @@ interface_statistics_json(int ifno, char *buf, int buflen)
 	return snprintf(buf, buflen,
 	    "{"
 	    "\"interface\":\"%s\","
-	    "\"packetsize\":%llu,"
+	    "\"packetsize\":%"PRIu32","
 
 	    "\"address\":\"%s\","
 	    "\"macaddr\":\"%s\","
 	    "\"gateway-address\":\"%s\","
 	    "\"gateway-macaddr\":\"%s\","
 
-	    "\"TX\":%llu,"
-	    "\"RX\":%llu,"
-	    "\"TXppsconfig\":%llu,"
-	    "\"TXpps\":%llu,"
-	    "\"RXpps\":%llu,"
-	    "\"TXbps\":%llu,"
-	    "\"RXbps\":%llu,"
-	    "\"TXunderrun\":%llu,"
-	    "\"RXdrop\":%llu,"
-	    "\"RXdropps\":%llu,"
-	    "\"RXdup\":%llu,"
-	    "\"RXreorder\":%llu,"
+	    "\"TX\":%"PRIu64","
+	    "\"RX\":%"PRIu64","
+	    "\"TXppsconfig\":%"PRIu32","
+	    "\"TXpps\":%"PRIu64","
+	    "\"RXpps\":%"PRIu64","
+	    "\"TXbps\":%"PRIu64","
+	    "\"RXbps\":%"PRIu64","
+	    "\"TXunderrun\":%"PRIu64","
+	    "\"RXdrop\":%"PRIu64","
+	    "\"RXdropps\":%"PRIu64","
+	    "\"RXdup\":%"PRIu64","
+	    "\"RXreorder\":%"PRIu64","
 
-	    "\"RXdrop-perflow\":%llu,"
-	    "\"RXdup-perflow\":%llu,"
-	    "\"RXreorder-perflow\":%llu,"
+	    "\"RXdrop-perflow\":%"PRIu64","
+	    "\"RXdup-perflow\":%"PRIu64","
+	    "\"RXreorder-perflow\":%"PRIu64","
 
-	    "\"RXflowcontrol\":%llu,"
-	    "\"RXarp\":%llu,"
-	    "\"RXother\":%llu,"
-	    "\"RXicmp\":%llu,"
-	    "\"RXicmpecho\":%llu,"
-	    "\"RXicmpunreach\":%llu,"
-	    "\"RXicmpredirect\":%llu,"
-	    "\"RXicmpother\":%llu,"
+	    "\"RXflowcontrol\":%"PRIu64","
+	    "\"RXarp\":%"PRIu64","
+	    "\"RXother\":%"PRIu64","
+	    "\"RXicmp\":%"PRIu64","
+	    "\"RXicmpecho\":%"PRIu64","
+	    "\"RXicmpunreach\":%"PRIu64","
+	    "\"RXicmpredirect\":%"PRIu64","
+	    "\"RXicmpother\":%"PRIu64","
 
 	    "\"latency-max\":%.8f,"
 	    "\"latency-min\":%.8f,"
@@ -1942,36 +1937,36 @@ interface_statistics_json(int ifno, char *buf, int buflen)
 	    "}",
 
 	    iface->ifname,
-	    (unsigned long long)iface->pktsize,
+	    iface->pktsize,
 	    buf_ipaddr,
 	    buf_eaddr,
 	    buf_gwaddr,
 	    buf_gweaddr,
-	    (unsigned long long)iface->counter.tx,
-	    (unsigned long long)iface->counter.rx,
-	    (unsigned long long)iface->transmit_pps,
-	    (unsigned long long)iface->counter.tx_delta,
-	    (unsigned long long)iface->counter.rx_delta,
-	    (unsigned long long)iface->counter.tx_byte_delta * 8,
-	    (unsigned long long)iface->counter.rx_byte_delta * 8,
-	    (unsigned long long)iface->counter.tx_underrun,
-	    (unsigned long long)iface->counter.rx_seqdrop,
-	    (unsigned long long)iface->counter.rx_seqdrop_delta,
-	    (unsigned long long)iface->counter.rx_dup,
-	    (unsigned long long)iface->counter.rx_reorder,
+	    iface->counter.tx,
+	    iface->counter.rx,
+	    iface->transmit_pps,
+	    iface->counter.tx_delta,
+	    iface->counter.rx_delta,
+	    iface->counter.tx_byte_delta * 8,
+	    iface->counter.rx_byte_delta * 8,
+	    iface->counter.tx_underrun,
+	    iface->counter.rx_seqdrop,
+	    iface->counter.rx_seqdrop_delta,
+	    iface->counter.rx_dup,
+	    iface->counter.rx_reorder,
 
-	    (unsigned long long)iface->counter.rx_seqdrop_flow,
-	    (unsigned long long)iface->counter.rx_dup_flow,
-	    (unsigned long long)iface->counter.rx_reorder_flow,
+	    iface->counter.rx_seqdrop_flow,
+	    iface->counter.rx_dup_flow,
+	    iface->counter.rx_reorder_flow,
 
-	    (unsigned long long)iface->counter.rx_flow,
-	    (unsigned long long)iface->counter.rx_arp,
-	    (unsigned long long)iface->counter.rx_other,
-	    (unsigned long long)iface->counter.rx_icmp,
-	    (unsigned long long)iface->counter.rx_icmpecho,
-	    (unsigned long long)iface->counter.rx_icmpunreach,
-	    (unsigned long long)iface->counter.rx_icmpredirect,
-	    (unsigned long long)iface->counter.rx_icmpother,
+	    iface->counter.rx_flow,
+	    iface->counter.rx_arp,
+	    iface->counter.rx_other,
+	    iface->counter.rx_icmp,
+	    iface->counter.rx_icmpecho,
+	    iface->counter.rx_icmpunreach,
+	    iface->counter.rx_icmpredirect,
+	    iface->counter.rx_icmpother,
 
 	    iface->counter.latency_max,
 	    iface->counter.latency_min,
@@ -2934,12 +2929,12 @@ rfc2544_test(int unsigned n)
 		    (((interface[0].counter.rx_seqdrop * 100.0) / interface[0].counter.rx) > opt_rfc2544_tolerable_error_rate)) {
 
 			do_down_pps = 1;
-			DEBUGLOG("RFC2544: pktsize=%d, pps=%d (%.2fMbps), rx=%llu, drop=%llu, drop-rate=%.3f\n",
+			DEBUGLOG("RFC2544: pktsize=%d, pps=%d (%.2fMbps), rx=%"PRIu64", drop=%"PRIu64", drop-rate=%.3f\n",
 			    work->pktsize,
 			    work->curpps,
 			    calc_mbps(work->pktsize, work->curpps),
-			    (unsigned long long)interface[0].counter.rx,
-			    (unsigned long long)interface[0].counter.rx_seqdrop,
+			    interface[0].counter.rx,
+			    interface[0].counter.rx_seqdrop,
 			    interface[0].counter.rx_seqdrop * 100.0 / interface[0].counter.rx);
 			DEBUGLOG("RFC2544: down pps\n");
 
@@ -2963,10 +2958,10 @@ rfc2544_test(int unsigned n)
 					    work->curpps);
 				} else if ((interface[0].counter.rx * 100.0 / interface[1].counter.tx) < opt_rfc2544_tolerable_error_rate) {
 					do_down_pps = 1;
-					DEBUGLOG("RFC2544: pktsize=%d, pps=%d, tx=%llu, rx=%llu, enough packets not received. down pps\n",
+					DEBUGLOG("RFC2544: pktsize=%d, pps=%d, tx=%"PRIu64", rx=%"PRIu64", enough packets not received. down pps\n",
 					    work->pktsize,
 					    work->curpps,
-					    (unsigned long long)interface[1].counter.tx, (unsigned long long)interface[0].counter.rx);
+					    interface[1].counter.tx, interface[0].counter.rx);
 				} else {
 					/* no drop. OK! */
 					measure_done = rfc2544_up_pps();
@@ -3527,13 +3522,13 @@ gentest_main(void)
 			lastsec = currenttime_main.tv_sec;
 			nsec++;
 
-			printf("%llu pkt generated.",
-			    (unsigned long long)npkt - lpkt);
+			printf("%"PRIu64" pkt generated.",
+			    npkt - lpkt);
 
-			printf(" totally %llu packet generated in %lu second. average: %llu pps, pktsize %d, %.2fMbps\n",
-			    (unsigned long long)npkt,
+			printf(" totally %"PRIu64" packet generated in %lu second. average: %"PRIu64" pps, pktsize %d, %.2fMbps\n",
+			    npkt,
 			    (unsigned long)nsec,
-			    (unsigned long long)npkt / nsec,
+			    npkt / nsec,
 			    interface[0].pktsize,
 			    calc_mbps(interface[0].pktsize, npkt / nsec));
 			fflush(stdout);
@@ -4127,7 +4122,7 @@ main(int argc, char *argv[])
 
 			/* for TX */
 			if (parse_flowstr(interface[1].adrlist, opt_tcp ? IPPROTO_TCP : IPPROTO_UDP, line, false) != 0) {
-				fprintf(stderr, "%s:%lld: cannot parse: \"%s\"\n", opt_flowlist, (unsigned long long)lineno, line);
+				fprintf(stderr, "%s:%"PRIu64": cannot parse: \"%s\"\n", opt_flowlist, lineno, line);
 				anyerror++;
 			}
 			/* for RX */
