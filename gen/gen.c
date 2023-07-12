@@ -766,41 +766,35 @@ reset_ipg(int ifno)
 	struct interface *iface = &interface[ifno];
 	char buf[256];
 	const char *drvname = iface->drvname;
-	unsigned long unit = iface->unit;
+
+#ifdef __linux__
+#define BUILD_CMD(target, value)	snprintf(buf, sizeof(buf), \
+					    "echo %d > /sys/class/net/%s/%s", \
+					    value, iface->ifname, target);
+#else
+#define BUILD_CMD(target, value)	snprintf(buf, sizeof(buf), \
+					    "sysctl -q -w dev.%s.%lu.%s=%d > /dev/null", \
+					    drvname, iface->unit, target, value);
+#endif
 
 	if (!support_ipg)
 		return;
 
 	if ((strncmp(drvname, "em", IFNAMSIZ) == 0)
 	    || (strncmp(drvname, "igb", IFNAMSIZ) == 0)) {
-#ifdef __linux__
-		snprintf(buf, sizeof(buf), "echo 8 > /sys/class/net/%s/tipg", iface->ifname);
-#else
-		snprintf(buf, sizeof(buf), "sysctl -q -w dev.%s.%lu.tipg=8 > /dev/null", drvname, unit);
-#endif
-
+		BUILD_CMD("tipg", 8);
 		system(buf);
 	} else if (strncmp(drvname, "ix", IFNAMSIZ) == 0) {
 		int rv;
 
 		/* Try TIPG first */
-#ifdef __linux__
-		snprintf(buf, sizeof(buf), "echo 0 > /sys/class/net/%s/tipg 2>/dev/null", iface->ifname);
-#else
-		snprintf(buf, sizeof(buf), "sysctl -q -w dev.%s.%lu.tipg=0 > /dev/null", drvname, unit);
-#endif
-
+		BUILD_CMD("tipg", 0);
 		rv = system(buf);
 		if (rv == 0)
 			return;
 
 		/* If failed, try PAP */
-#ifdef __linux__
-		snprintf(buf, sizeof(buf), "echo 0 > /sys/class/net/%s/pap", iface->ifname);
-#else
-		snprintf(buf, sizeof(buf), "sysctl -q -w dev.%s.%lu.pap=0 > /dev/null", drvname, unit);
-#endif
-
+		BUILD_CMD("pap", 0);
 		system(buf);
 	}
 #endif /* IPG_HACK */
