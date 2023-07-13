@@ -1275,6 +1275,11 @@ interface_close(int ifno)
 #endif
 
 #elif defined(USE_AF_XDP)
+	/*
+	 * timeout of poll() in rx_thread_main() is 100ms,
+	 * sleeping 200ms to wait returning from poll().
+	 */
+	usleep(200000);
 	ax_close(iface->ax_desc);
 #endif
 	reset_ipg(ifno);
