@@ -157,6 +157,7 @@ int opt_tcp = 0;
 int opt_udp = 1;	/* default */
 int opt_ipg = 0;
 int opt_time = 0;
+int opt_fail_if_dropped = 0;
 int opt_rfc2544 = 0;
 double opt_rfc2544_tolerable_error_rate = 0.0;	/* default 0.00 % */
 int opt_rfc2544_trial_duration = 60;	/* default 60sec */
@@ -2166,6 +2167,13 @@ quit(int fromsig)
 			rfc2544_showresult_json(opt_rfc2544_output_json);
 	}
 
+	if (opt_fail_if_dropped && status == EXIT_SUCCESS) {
+		struct interface *iface = &interface[0];
+		struct interface_statistics *ifstats = &iface->stats;
+
+		status = ifstats->rx_seqdrop != 0 ? EXIT_FAILURE : EXIT_SUCCESS;
+	}
+
 	if (fromsig)
 		_exit(status);
 	exit(status);
@@ -2261,6 +2269,8 @@ usage(void)
 	       "\n"
 	       "	-D <file>			debug. dump all generated packets to <file> as tcpdump file format\n"
 	       "	-d				debug. dump unknown packet\n"
+	       "\n"
+	       "	--fail-if-dropped		Program exits with failure if the receiver drops any packets\n"
 	);
 
 	exit(1);
@@ -3580,6 +3590,7 @@ static struct option longopts[] = {
 	{	"rfc2544-pktsize",		required_argument,	0,	0	},
 	{	"rfc2544-output-json",		required_argument,	0,	0	},
 	{	"nocurses",			no_argument,		0,	0	},
+	{	"fail-if-dropped",		no_argument,		0,	0	},
 	{	NULL,				0,			NULL,	0	}
 };
 
@@ -4117,6 +4128,8 @@ main(int argc, char *argv[])
 				opt_rfc2544_output_json = optarg;
 			} else if (strcmp(longopts[optidx].name, "nocurses") == 0) {
 				use_curses = false;
+			} else if (strcmp(longopts[optidx].name, "fail-if-dropped") == 0) {
+				opt_fail_if_dropped = 1;
 			} else {
 				usage();
 			}
