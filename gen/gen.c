@@ -156,6 +156,7 @@ int opt_fragment = 0;
 int opt_tcp = 0;
 int opt_udp = 1;	/* default */
 int opt_ipg = 0;
+int opt_time = 0;
 int opt_rfc2544 = 0;
 double opt_rfc2544_tolerable_error_rate = 0.0;	/* default 0.00 % */
 int opt_rfc2544_trial_duration = 60;	/* default 60sec */
@@ -371,6 +372,7 @@ struct ifflag {
 
 struct timespec currenttime_tx;
 struct timespec currenttime_main;
+struct timespec starttime_tx;
 sigset_t used_sigset;
 
 unsigned int
@@ -2022,6 +2024,15 @@ sighandler_alrm(int signo)
 
 	clock_gettime(CLOCK_MONOTONIC, &currenttime_main);
 
+	if (opt_time) {
+		struct timespec delta;
+		timespecsub(&currenttime_main, &starttime_tx, &delta);
+		if (delta.tv_sec >= opt_time) {
+			do_quit = 1;
+			return;
+		}
+	}
+
 	if ((nhz + 1) >= pps_hz) {
 		/*
 		 * this block called 1Hz
@@ -2209,6 +2220,7 @@ usage(void)
 	       "\n"
 	       "	-s <size>			specify pktsize (IPv4:46-1500, IPv6:tcp:54-1500)\n"
 	       "	-p <pps>			specify pps\n"
+	       "	-t <time>			time in seconds to send packets\n"
 	       "	-f				full-duplex mode\n"
 	       "\n"
 	       "	-v				verbose\n"
@@ -2297,6 +2309,7 @@ tx_thread_main(void *arg)
 
 	(void)pthread_sigmask(SIG_BLOCK, &used_sigset, NULL);
 
+	clock_gettime(CLOCK_MONOTONIC, &starttime_tx);
 	while (do_quit == 0) {
 		if (iface->need_reset_statistics) {
 			iface->need_reset_statistics = 0;
@@ -3504,8 +3517,16 @@ gentest_main(void)
 	ip4pkt_udp_template(pktbuffer_ipv4[PKTBUF_UDP][0], 1500 + ETHHDRSIZE);
 	build_template_packet_ipv4(0, pktbuffer_ipv4[PKTBUF_UDP][0]);
 
+	clock_gettime(CLOCK_MONOTONIC, &starttime_tx);
 	for (;;) {
 		clock_gettime(CLOCK_MONOTONIC, &currenttime_main);
+
+		if (opt_time) {
+			struct timespec delta;
+			timespecsub(&currenttime_main, &starttime_tx, &delta);
+			if (delta.tv_sec >= opt_time)
+				break;
+		}
 
 		touchup_tx_packet(pktbuffer_ipv4[PKTBUF_UDP][0], 0);
 
@@ -3860,7 +3881,7 @@ main(int argc, char *argv[])
 		interface[i].pktsize = min_pktsize;
 	}
 
-	while ((ch = getopt_long(argc, argv, "D:dF:fH:L:n:Pp:R:S:s:T:tvV:X", longopts, &optidx)) != -1) {
+	while ((ch = getopt_long(argc, argv, "D:dF:fH:L:n:Pp:R:S:s:T:t:vV:X", longopts, &optidx)) != -1) {
 		switch (ch) {
 		case 'd':
 			opt_debuglevel++;
@@ -4001,6 +4022,16 @@ main(int argc, char *argv[])
 				interface[1].pktsize = sz;
 			}
 			break;
+		case 't':
+			{
+				int time;
+				time = strtol(optarg, (char **)NULL, 10);
+				if (time < 0) {
+					usage();
+				}
+				opt_time = time;
+			}
+			break;
 		case 'v':
 			verbose++;
 			break;
@@ -4096,6 +4127,11 @@ main(int argc, char *argv[])
 
 	printf_verbose("ipgen v%s\n", ipgen_version);
 	printf_verbose("\n");
+
+	if (opt_time && (opt_rfc2544 || testscript != NULL)) {
+		fprintf(stderr, "cannot use -t with --rfc2544 or -S at the same time\n");
+		exit(1);
+	}
 
 	if (opt_addrrange && opt_allnet) {
 		fprintf(stderr, "cannot use --allnet and --saddr/--daddr at the same time\n");
