@@ -2135,6 +2135,7 @@ static void
 quit(int fromsig)
 {
 	static int quitting = 0;
+	int status = fromsig ? EXIT_FAILURE : EXIT_SUCCESS;
 
 	if (quitting) {
 		for (;;)
@@ -2166,8 +2167,8 @@ quit(int fromsig)
 	}
 
 	if (fromsig)
-		_exit(1);
-	exit(1);
+		_exit(status);
+	exit(status);
 }
 
 static void
@@ -4177,7 +4178,7 @@ main(int argc, char *argv[])
 
 	if (opt_gentest) {
 		gentest_main();
-		exit(1);
+		exit(0);
 	}
 
 	if (ifname[0][0] == '\0')
