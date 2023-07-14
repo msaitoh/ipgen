@@ -119,6 +119,8 @@ FILE *debugfh;
 #define DEBUGCLOSE()		((void)0)
 #endif
 
+#define printf_verbose(fmt, args...)	do { if (verbose > 0) printf(fmt, ## args);} while (0)
+
 
 static void logging(char const *fmt, ...);
 static void rfc2544_showresult(void);
@@ -794,21 +796,26 @@ setup_ipg(const int ifno, const char *ifname)
 	char path[256];
 
 	if (getdrvname(ifname, drvname) == -1) {
-		printf("warning: failed to get drvname of %s\n", ifname);
+		if (opt_ipg)
+			printf("warning: failed to get drvname of %s\n", ifname);
 		return;
 	}
 
 	snprintf(path, sizeof(path), "/sys/class/net/%s/tipg", ifname);
 	if (access(path, R_OK|W_OK) == 0) {
 		support_ipg = 1;
-		printf("%s TIPG feature supported\n", ifname);
+		if (opt_ipg)
+			printf_verbose("%s TIPG feature supported\n", ifname);
 	} else {
 		snprintf(path, sizeof(path), "/sys/class/net/%s/pap", ifname);
 		if (access(path, R_OK|W_OK) == 0) {
 			support_ipg = 1;
-			printf("%s PAP feature supported\n", ifname);
-		} else
-			printf("%s Neither TIPG nor PAP feature supported\n", ifname);
+			if (opt_ipg)
+				printf_verbose("%s PAP feature supported\n", ifname);
+		} else {
+			if (opt_ipg)
+				printf("%s Neither TIPG nor PAP feature supported\n", ifname);
+		}
 	}
 #else
 	char strbuf[256];
@@ -822,14 +829,18 @@ setup_ipg(const int ifno, const char *ifname)
 	snprintf(strbuf, sizeof(strbuf), "sysctl -q dev.%s.%lu.tipg > /dev/null", drvname, unit);
 	if (system(strbuf) == 0) {
 		support_ipg = 1;
-		printf("%s%lu TIPG feature supported\n", drvname, unit);
+		if (opt_ipg)
+			printf_verbose("%s%lu TIPG feature supported\n", drvname, unit);
 	} else {
 		snprintf(strbuf, sizeof(strbuf), "sysctl -q dev.%s.%lu.pap > /dev/null", drvname, unit);
 		if (system(strbuf) == 0) {
 			support_ipg = 1;
-			printf("%s%lu PAP feature supported\n", drvname, unit);
-		} else
-			printf("%s%lu Neither TIPG feature nor PAP feature supported\n", drvname, unit);
+			if (opt_ipg)
+				printf_verbose("%s%lu PAP feature supported\n", drvname, unit);
+		} else {
+			if (opt_ipg)
+				printf("%s%lu Neither TIPG feature nor PAP feature supported\n", drvname, unit);
+		}
 	}
 	interface[ifno].unit = unit;
 #endif
@@ -1087,19 +1098,19 @@ interface_wait_linkup(const char *ifname)
 {
 	int i;
 
-	printf("%s: waiting link up .", ifname);
+	printf_verbose("%s: waiting link up .", ifname);
 	fflush(stdout);
 	for (i = 100; i >= 0; i--) {
 		if (interface_is_active(ifname))
 			break;
 		usleep(500000);
-		printf(".");
+		printf_verbose(".");
 		fflush(stdout);
 	}
 	if (i >= 0) {
-		printf(" OK\n");
+		printf_verbose(" OK\n");
 	} else {
-		printf(" giving up\n");
+		printf_verbose(" giving up\n");
 	}
 	fflush(stdout);
 }
@@ -1182,7 +1193,7 @@ interface_setup(int ifno, const char *ifname)
 
 		memcpy(&iface->gweaddr, mac, ETHER_ADDR_LEN);
 
-		fprintf(stderr, "arp/ndp resolved. %s on %s = %s\n",
+		printf_verbose("arp/ndp resolved. %s on %s = %s\n",
 		    addrstr,
 		    iface->ifname,
 		    ether_ntoa(&iface->gweaddr));
@@ -3835,10 +3846,6 @@ main(int argc, char *argv[])
 
 	DEBUGOPEN("ipgen-debug.log");
 
-	printf("ipgen v%s\n", ipgen_version);
-
-	printf("\n");
-
 	/* XXX */
 	seq_magic = getpid() & 0xffff;
 
@@ -4087,6 +4094,9 @@ main(int argc, char *argv[])
 		}
 	}
 
+	printf_verbose("ipgen v%s\n", ipgen_version);
+	printf_verbose("\n");
+
 	if (opt_addrrange && opt_allnet) {
 		fprintf(stderr, "cannot use --allnet and --saddr/--daddr at the same time\n");
 		exit(1);
@@ -4165,19 +4175,27 @@ main(int argc, char *argv[])
 			uint64_t linkspeed = interface_get_baudrate(ifname[i]);
 
 			if (linkspeed > 0) {
-				interface[i].maxlinkspeed = linkspeed;
-				fprintf(stderr, "%s: linkspeed = %lu\n", ifname[i], linkspeed);
-				break;
-			}
-
-			if (linkspeed < IF_Mbps(10)) {
-				/*
-				 * If the baudrate is lower than 10Mbps,
-				 * something is wrong.
-				 */
-				fprintf(stderr,
-				    "%s: WARINIG: baudrate(%lu) < IF_Mbps(10)\n", ifname[i],
-				    linkspeed);
+				if (linkspeed < IF_Mbps(10)) {
+					/*
+					 * If the baudrate is lower than 10Mbps,
+					 * something is wrong.
+					 */
+					fprintf(stderr,
+					    "%s: WARINIG: baudrate(%lu) < IF_Mbps(10)\n",
+					    ifname[i], linkspeed);
+				} else if (linkspeed > IF_Gbps(10)) {
+					/*
+					 * If the baudrate is higher than 10Gbps,
+					 * something is wrong.
+					 */
+					fprintf(stderr,
+					    "%s: WARINIG: baudrate(%lu) > IF_Gbps(10)\n",
+					    ifname[i], linkspeed);
+				} else {
+					interface[i].maxlinkspeed = linkspeed;
+					printf_verbose("%s: linkspeed = %lu\n", ifname[i], linkspeed);
+					break;
+				}
 			}
 
 			/*
@@ -4191,7 +4209,7 @@ main(int argc, char *argv[])
 			}
 		}
 		if (interface[i].maxlinkspeed == 0)
-			interface[i].maxlinkspeed = LINKSPEED_1GBPS;
+			interface[i].maxlinkspeed = LINKSPEED_1GBPS; /* XXX 10 Gbps */
 
 		if ((interface[i].af_gwaddr != 0) &&
 		    (memcmp(eth_zero, &interface[i].gweaddr, ETHER_ADDR_LEN) == 0) &&
@@ -4362,16 +4380,19 @@ main(int argc, char *argv[])
 	}
 
 
-	printf("HZ=%d\n", pps_hz);
-	printf("%s %s %s, ",
+	printf_verbose("HZ=%d\n", pps_hz);
+	printf_verbose("%s %s %s, ",
 	    ifname[1],
 	    opt_fulldup ? "<->" : "->",
 	    ifname[0]);
 
-	printf("opt_bps_include_preamble=%d\n", opt_bps_include_preamble);
-	printf("IP pktsize %d, %u pps, %.1f Mbps (%lu bps)\n", interface[0].pktsize, interface[0].transmit_pps,
-	    calc_mbps(interface[0].pktsize, interface[0].transmit_pps),
-	    (unsigned long)calc_bps(interface[0].pktsize, interface[0].transmit_pps));
+	printf_verbose("opt_bps_include_preamble=%d\n", opt_bps_include_preamble);
+
+	if (!opt_rfc2544) {
+		printf("IP pktsize %d, %u pps, %.1f Mbps (%lu bps)\n", interface[0].pktsize, interface[0].transmit_pps,
+		    calc_mbps(interface[0].pktsize, interface[0].transmit_pps),
+		    (unsigned long)calc_bps(interface[0].pktsize, interface[0].transmit_pps));
+	}
 
 	/*
 	 * open netmap devices
@@ -4389,6 +4410,9 @@ main(int argc, char *argv[])
 	for (i = 0; i < 2; i++) {
 		char inetbuf1[INET6_ADDRSTRLEN];
 		char inetbuf2[INET6_ADDRSTRLEN];
+
+		if (verbose == 0)
+			break;
 
 		printf("%s(%s)",
 		    interface[i].ifname,

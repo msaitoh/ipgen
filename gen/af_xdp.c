@@ -96,8 +96,11 @@ ax_setup_socket(const char *ifname, void *umem_area, size_t size)
 		free(axs);
 		return NULL;
 	}
+
+#ifdef USE_ZEROCOPY
 	if (cfg.bind_flags == 0)
 		fprintf(stderr, "warning: zerocopy mode is NOT enabled on %s\n", ifname);
+#endif
 
 	return axs;
 }

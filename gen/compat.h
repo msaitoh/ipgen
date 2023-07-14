@@ -33,7 +33,11 @@
 #endif
 
 #ifndef IF_Mbps
-#define IF_Mbps(n)	((n) * 1000 * 1000)
+#define IF_Mbps(n)	((uint64_t)(n) * 1000 * 1000)
+#endif
+
+#ifndef IF_Gbps
+#define IF_Gbps(n)	(IF_Mbps(n) * 1000)
 #endif
 
 #ifndef IFNAMSIZ
