@@ -1218,8 +1218,7 @@ interface_open(int ifno)
 	);
 
 	if (iface->nm_desc->done_mmap)
-		printf(", %u MB mapped",
-		    iface->nm_desc->memsize / 1024 / 1024);
+		printf(", %u MB mapped", iface->nm_desc->memsize / 1024 / 1024);
 	printf("\n");
 
 #elif defined(USE_AF_XDP)
@@ -1672,12 +1671,9 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 
 		ifstats->latency_sum += latency;
 		ifstats->latency_npkt++;
-		ifstats->latency_avg =
-		    ifstats->latency_sum / 
-		    ifstats->latency_npkt;
+		ifstats->latency_avg = ifstats->latency_sum / ifstats->latency_npkt;
 
-		if ((ifstats->latency_min == 0) ||
-		    (ifstats->latency_min > latency))
+		if ((ifstats->latency_min == 0) || (ifstats->latency_min > latency))
 			ifstats->latency_min = latency;
 		if (ifstats->latency_max < latency)
 			ifstats->latency_max = latency;
@@ -3504,8 +3500,7 @@ gentest_main(void)
 			lastsec = currenttime_main.tv_sec;
 			nsec++;
 
-			printf("%"PRIu64" pkt generated.",
-			    npkt - lpkt);
+			printf("%"PRIu64" pkt generated.", npkt - lpkt);
 
 			printf(" totally %"PRIu64" packet generated in %lu second. average: %"PRIu64" pps, pktsize %d, %.2fMbps\n",
 			    npkt,
