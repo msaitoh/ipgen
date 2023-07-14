@@ -5,7 +5,7 @@
   Total Count:                                                            
     TX: ######################## pkt    TX: ###################### pkt    	id=if0_tx,U64			id=if1_tx,U64
     TX-arp/ndp/LCP: ############ pkt    TX-arp/ndp/LCP: ########## pkt    	id=if0_tx_other,U64		id=if1_tx_other,U64
-    TX-underrun: ############### pkt    TX-underrun: ############# pkt    	id=if0_tx_underrun,U64		id=if1_rx_underrun,U64
+    TX-underrun: ############### pkt    TX-underrun: ############# pkt    	id=if0_tx_underrun,U64		id=if1_tx_underrun,U64
     RX: ######################## pkt    RX: ###################### pkt    	id=if0_rx,U64			id=if1_rx,U64
     RX-drop: ################### pkt    RX-drop: ################# pkt    	id=if0_rx_drop,U64		id=if1_rx_drop,U64
     RX-dup: #################### pkt    RX-dup: ################## pkt    	id=if0_rx_dup,U64		id=if1_rx_dup,U64

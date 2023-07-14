@@ -3259,7 +3259,7 @@ control_init_items(struct itemlist *itemlist)
 	REG(IF0_TX_OTHER, NULL, &ifstats0->tx_other);
 	REG(IF1_TX_OTHER, NULL, &ifstats1->tx_other);
 	REG(IF0_TX_UNDERRUN, NULL, &ifstats0->tx_underrun);
-	REG(IF1_RX_UNDERRUN, NULL, &ifstats1->tx_underrun);
+	REG(IF1_TX_UNDERRUN, NULL, &ifstats1->tx_underrun);
 	REG(IF0_RX, NULL, &ifstats0->rx);
 	REG(IF1_RX, NULL, &ifstats1->rx);
 	REG(IF0_RX_DROP, NULL, &ifstats0->rx_seqdrop);
