@@ -923,6 +923,9 @@ calc_ipg(int ifno)
 		/*  / 1000 / 1000; */
 
 		DEBUGLOG("pps=%u, bps=%lu\n", iface->transmit_pps, bps);
+		/* Need some margin to avoid underestimate. */
+		bps = (unsigned long)((double)bps * 1.02);
+		DEBUGLOG("pps=%u, bps=%lu\n", iface->transmit_pps, bps);
 		if ((bps % (iface->maxlinkspeed / 10)) > 0)
 			bps += iface->maxlinkspeed / 10;
 		new_pap = bps / (iface->maxlinkspeed / 10);
