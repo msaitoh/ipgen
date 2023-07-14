@@ -2236,6 +2236,7 @@ usage(void)
 	       "\n"
 	       "	-X				packet generation benchmark\n"
 	       "	-XX				packet generation benchmark with memcpy\n"
+	       "	-XXX				packet generation benchmark with memcpy and cksum\n"
 	       "\n"
 	       "	--tcp				generate TCP packet\n"
 	       "	--udp				generate UDP packet (default)\n"
