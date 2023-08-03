@@ -44,6 +44,7 @@ make depend && make && sudo make install
 ```
 - run ipgen
 
+Tested on Ubuntu 22.04.
 
 ## Caveat
 
