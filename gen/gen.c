@@ -157,6 +157,8 @@ char *opt_rfc2544_pktsize;
 int opt_rfc2544_slowstart = 0;
 double opt_rfc2544_ppsresolution = 0.0;	/* default 0.00% */
 char *opt_rfc2544_output_json = NULL;
+int opt_rfc2544_interval = 0;
+int opt_rfc2544_warming_duration = 1;
 
 #ifdef IPG_HACK
 int support_ipg = 0;
@@ -2299,6 +2301,8 @@ usage(void)
 	       "	--rfc2544-pktsize <size>[,<size>...]]\n"
 	       "					test only specified pktsize. (default: 46,110,494,1006,1262,1390,1500)\n"
 	       "	--rfc2544-output-json <file>	output rfc2544 results as json file format\n"
+	       "	--rfc2544-interval <sec>	interval time between rfc2544 trial (default: 0)\n"
+	       "	--rfc2544-warming-duration <sec>	warming time before rfc2544 trial (1-60, default: 1)\n"
 	       "\n"
 	       "	--nocurses			no curses mode\n"
 	       "\n"
@@ -2558,7 +2562,10 @@ typedef enum {
 	RFC2544_WARMUP,
 	RFC2544_RESETTING0,
 	RFC2544_RESETTING,
-	RFC2544_PPSCHANGE,
+	RFC2544_INTERVAL0,
+	RFC2544_INTERVAL,
+	RFC2544_WARMING0,
+	RFC2544_WARMING,
 	RFC2544_MEASURING0,
 	RFC2544_MEASURING,
 	RFC2544_DONE0,
@@ -2692,6 +2699,8 @@ rfc2544_showresult(void)
 	printf("rfc2544 tolerable error rate: %.4f%%\n", opt_rfc2544_tolerable_error_rate);
 	printf("rfc2544 trial duration: %d sec\n", opt_rfc2544_trial_duration);
 	printf("rfc2544 pps resolution: %.4f%%\n", opt_rfc2544_ppsresolution);
+	printf("rfc2544 interval: %d sec\n", opt_rfc2544_interval);
+	printf("rfc2544 warming duration: %d sec\n", opt_rfc2544_warming_duration);
 	printf("\n");
 
 	if (linkspeed == 100)
@@ -2882,8 +2891,8 @@ rfc2544_test(unsigned int n)
 
 	switch (state) {
 	case RFC2544_START:
-		logging("start rfc2544 test mode. trial-duration is %d sec. warming up...",
-		    opt_rfc2544_trial_duration);
+		logging("start rfc2544 test mode. trial-duration is %d sec and interval is %d sec. warming up...",
+		    opt_rfc2544_trial_duration, opt_rfc2544_interval);
 
 		/* disable transmit */
 		transmit_set(0, 0);
@@ -2941,10 +2950,44 @@ rfc2544_test(unsigned int n)
 		statistics_clear();
 		transmit_set(1, 1);
 
-		state = RFC2544_MEASURING0;
+		state = opt_rfc2544_warming_duration > 0 ? RFC2544_WARMING0 : RFC2544_MEASURING0;
 		break;
 
-	case RFC2544_PPSCHANGE:
+	case RFC2544_INTERVAL0:
+		transmit_set(1, 0);
+		statistics_clear();
+		memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
+		statetime.tv_sec += 1;	/* wait 2sec */
+		statetime.tv_sec += opt_rfc2544_interval;
+		logging("interval: wait %d sec.", opt_rfc2544_interval);
+
+		state = RFC2544_INTERVAL;
+		break;
+
+	case RFC2544_INTERVAL:
+		if (timespeccmp(&currenttime_main, &statetime, <))
+			break;
+
+		state = RFC2544_WARMING0;
+		break;
+
+	case RFC2544_WARMING0:
+		transmit_set(1, 1);
+		statistics_clear();
+		logging("warming: %d sec, pktsize %u, pps %u, %.2fMbps [%.2fMbps:%.2fMbps]",
+		    opt_rfc2544_warming_duration,
+		    work->pktsize,
+		    work->curpps,
+		    calc_mbps(work->pktsize, work->curpps),
+				calc_mbps(work->pktsize, work->minpps),
+				calc_mbps(work->pktsize, work->maxpps));
+
+		memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
+		statetime.tv_sec += opt_rfc2544_warming_duration;
+		state = RFC2544_WARMING;
+		break;
+
+	case RFC2544_WARMING:
 		if (timespeccmp(&currenttime_main, &statetime, <))
 			break;
 
@@ -3024,10 +3067,7 @@ rfc2544_test(unsigned int n)
 						    work->curpps);
 
 						setpps(1, work->curpps);
-						statistics_clear();
-						memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
-						statetime.tv_sec += 1;	/* wait 2sec */
-						state = RFC2544_PPSCHANGE;
+						state = opt_rfc2544_interval > 0 ? RFC2544_INTERVAL0 : RFC2544_WARMING0;
 					}
 				}
 			}
@@ -3037,10 +3077,12 @@ rfc2544_test(unsigned int n)
 			measure_done = rfc2544_down_pps();
 			if (!measure_done) {
 				setpps(1, work->curpps);
+				transmit_set(1, 0);
 				statistics_clear();
 				memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
-				statetime.tv_sec += 1;	/* wait 2sec */
-				state = RFC2544_PPSCHANGE;
+				statetime.tv_sec += opt_rfc2544_interval;
+				logging("interval: wait %d sec.", opt_rfc2544_interval);
+				state = RFC2544_INTERVAL;
 			}
 		}
 
@@ -3620,6 +3662,8 @@ static struct option longopts[] = {
 	{	"rfc2544-pps-resolution",	required_argument,	0,	0	},
 	{	"rfc2544-trial-duration",	required_argument,	0,	0	},
 	{	"rfc2544-pktsize",		required_argument,	0,	0	},
+	{	"rfc2544-interval",		required_argument,	0,	0	},
+	{	"rfc2544-warming-duration",		required_argument,	0,	0	},
 	{	"rfc2544-output-json",		required_argument,	0,	0	},
 	{	"nocurses",			no_argument,		0,	0	},
 	{	"fail-if-dropped",		no_argument,		0,	0	},
@@ -4157,6 +4201,18 @@ main(int argc, char *argv[])
 				opt_rfc2544_pktsize = optarg;
 			} else if (strcmp(longopts[optidx].name, "rfc2544-output-json") == 0) {
 				opt_rfc2544_output_json = optarg;
+			} else if (strcmp(longopts[optidx].name, "rfc2544-interval") == 0) {
+				opt_rfc2544_interval = strtol(optarg, (char **)NULL, 10);
+				if (opt_rfc2544_interval < 0 || opt_rfc2544_interval > 60) {
+					fprintf(stderr, "illegal interval. must be 0-60: %s\n", optarg);
+					exit(1);
+				}
+			} else if (strcmp(longopts[optidx].name, "rfc2544-warming-duration") == 0) {
+				opt_rfc2544_warming_duration = strtol(optarg, (char **)NULL, 10);
+				if (opt_rfc2544_warming_duration < 1 || opt_rfc2544_warming_duration > 60) {
+					fprintf(stderr, "illegal interval. must be 1-60: %s\n", optarg);
+					exit(1);
+				}
 			} else if (strcmp(longopts[optidx].name, "nocurses") == 0) {
 				use_curses = false;
 			} else if (strcmp(longopts[optidx].name, "fail-if-dropped") == 0) {
