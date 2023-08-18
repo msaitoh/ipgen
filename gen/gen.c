@@ -159,6 +159,7 @@ double opt_rfc2544_ppsresolution = 0.0;	/* default 0.00% */
 char *opt_rfc2544_output_json = NULL;
 int opt_rfc2544_interval = 0;
 int opt_rfc2544_warming_duration = 1;
+int opt_rfc2544_early_finish = 1;
 
 #ifdef IPG_HACK
 int support_ipg = 0;
@@ -2303,6 +2304,7 @@ usage(void)
 	       "	--rfc2544-output-json <file>	output rfc2544 results as json file format\n"
 	       "	--rfc2544-interval <sec>	interval time between rfc2544 trial (default: 0)\n"
 	       "	--rfc2544-warming-duration <sec>	warming time before rfc2544 trial (1-60, default: 1)\n"
+	       "	--rfc2544-no-early-finish	complete each trial without finishing early\n"
 	       "\n"
 	       "	--nocurses			no curses mode\n"
 	       "\n"
@@ -3021,6 +3023,9 @@ rfc2544_test(unsigned int n)
 		measure_done = 0;
 		do_down_pps = 0;
 
+		if (!opt_rfc2544_early_finish && timespeccmp(&currenttime_main, &statetime, <))
+			break;
+
 		if ((interface[0].stats.rx != 0) &&
 		    (((interface[0].stats.rx_seqdrop * 100.0) / interface[0].stats.rx) > opt_rfc2544_tolerable_error_rate)) {
 
@@ -3665,6 +3670,7 @@ static struct option longopts[] = {
 	{	"rfc2544-interval",		required_argument,	0,	0	},
 	{	"rfc2544-warming-duration",		required_argument,	0,	0	},
 	{	"rfc2544-output-json",		required_argument,	0,	0	},
+	{	"rfc2544-no-early-finish",		no_argument,		0,	0	},
 	{	"nocurses",			no_argument,		0,	0	},
 	{	"fail-if-dropped",		no_argument,		0,	0	},
 	{	NULL,				0,			NULL,	0	}
@@ -4213,6 +4219,8 @@ main(int argc, char *argv[])
 					fprintf(stderr, "illegal interval. must be 1-60: %s\n", optarg);
 					exit(1);
 				}
+			} else if (strcmp(longopts[optidx].name, "rfc2544-no-early-finish") == 0) {
+				opt_rfc2544_early_finish = 0;
 			} else if (strcmp(longopts[optidx].name, "nocurses") == 0) {
 				use_curses = false;
 			} else if (strcmp(longopts[optidx].name, "fail-if-dropped") == 0) {
