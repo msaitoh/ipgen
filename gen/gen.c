@@ -824,7 +824,7 @@ setup_ipg(const int ifno, const char *ifname)
 	char strbuf[256];
 	unsigned long unit;
 
-	if (getifunit(ifname, drvname, &unit) != -1) {
+	if (getifunit(ifname, drvname, &unit) == -1) {
 		printf("warning: failed to get driver and unit of %s\n", ifname);
 		return;
 	}
