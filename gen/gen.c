@@ -816,8 +816,10 @@ setup_ipg(const int ifno, const char *ifname)
 			if (opt_ipg)
 				printf_verbose("%s PAP feature supported\n", ifname);
 		} else {
-			if (opt_ipg)
-				printf("%s Neither TIPG nor PAP feature supported\n", ifname);
+			if (opt_ipg) {
+				printf("%s Neither TIPG feature nor PAP feature supported. Use %s driver patched for TIPG/PAP or drop the --ipg option.\n", drvname, drvname);
+				exit(1);
+			}
 		}
 	}
 #else
@@ -841,8 +843,10 @@ setup_ipg(const int ifno, const char *ifname)
 			if (opt_ipg)
 				printf_verbose("%s%lu PAP feature supported\n", drvname, unit);
 		} else {
-			if (opt_ipg)
-				printf("%s%lu Neither TIPG feature nor PAP feature supported\n", drvname, unit);
+			if (opt_ipg) {
+				printf("%s%lu Neither TIPG feature nor PAP feature supported. Use %s driver patched for TIPG/PAP or drop the --ipg option.\n", drvname, unit, drvname);
+				exit(1);
+			}
 		}
 	}
 	interface[ifno].unit = unit;
