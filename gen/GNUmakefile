@@ -2,7 +2,8 @@ include ../Makefile.inc
 
 PROG=		ipgen
 SRCS=		gen.c util.c webserv.c pbuf.c sequencecheck.c seqtable.c item.c genscript.c flowparse.c pktgen_item.c
-CFLAGS+=	-I.. -I/usr/local/include -g -Wall -DHTDOCS=\"${PREFIX}/share/ipgen/htdocs\"
+CFLAGS+=	-I.. -I/usr/local/include -g -DHTDOCS=\"${PREFIX}/share/ipgen/htdocs\"
+CFLAGS+=	-Wall -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith
 LDADD=		-L../libpkt -lpkt -L../libaddrlist -L/usr/local/lib -laddrlist -lpthread -lc -lcurses -levent -lmd
 
 ifeq ($(shell uname),Linux)
