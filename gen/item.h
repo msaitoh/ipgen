@@ -81,7 +81,7 @@ int itemlist_init_term(void);
 int itemlist_fini_term(void);
 
 void itemlist_register_item(struct itemlist *, int, int (*)(struct itemlist *, struct item *, void *), void *);
-void itemlist_setvalue(struct itemlist *, int, void *);
+void itemlist_setvalue(struct itemlist *, int, const void *);
 void itemlist_focus(struct itemlist *, int);
 void itemlist_editable(struct itemlist *, int, int);
 

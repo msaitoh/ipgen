@@ -89,13 +89,14 @@ ip4pkt_arpquery(char *buf, const struct ether_addr *sha, in_addr_t spa, in_addr_
 int
 ip4pkt_arpreply(char *buf, const char *querybuf, u_char *eaddr, in_addr_t addr, in_addr_t mask)
 {
-	struct ether_header *eheader;
-	struct ether_vlan_header *evheader = NULL;
-	struct arppkt_l2 *aquery, *areply;
+	const struct ether_header *eheader;
+	const struct ether_vlan_header *evheader = NULL;
+	const struct arppkt_l2 *aquery;
+	struct arppkt_l2 *areply;
 	uint16_t etype;
 
-	eheader = (struct ether_header *)querybuf;
-	aquery = (struct arppkt_l2 *)querybuf;
+	eheader = (const struct ether_header *)querybuf;
+	aquery = (const struct arppkt_l2 *)querybuf;
 	areply = (struct arppkt_l2 *)buf;
 
 	static const uint8_t eth_broadcast[ETHER_ADDR_LEN] =
@@ -103,7 +104,7 @@ ip4pkt_arpreply(char *buf, const char *querybuf, u_char *eaddr, in_addr_t addr, 
 
 	etype = ntohs(eheader->ether_type);
 	if (etype == ETHERTYPE_VLAN) {
-		evheader = (struct ether_vlan_header *)eheader;
+		evheader = (const struct ether_vlan_header *)eheader;
 		etype = ntohs(evheader->evl_proto);
 	}
 
@@ -187,10 +188,11 @@ ip4pkt_icmp_template(char *buf, unsigned int framelen)
 int
 ip4pkt_icmp_echoreply(char *buf, unsigned int l3offset, const char *reqbuf, unsigned int framelen)
 {
-	struct ip *ip, *rip;
+	struct ip *ip;
+	const struct ip *rip;
 
 	ip = (struct ip *)(buf + l3offset);
-	rip = (struct ip *)(reqbuf + l3offset);
+	rip = (const struct ip *)(reqbuf + l3offset);
 
 	memcpy(buf, reqbuf, framelen);
 	ip->ip_src = rip->ip_dst;

@@ -112,7 +112,7 @@ strmacaddr(const uint8_t *eth)
 	return buf;
 }
 
-static char *
+const static char *
 strpppoecode(uint8_t code)
 {
 	static char buf[sizeof("0x00")];
@@ -134,7 +134,7 @@ strpppoecode(uint8_t code)
 	return buf;
 }
 
-static char *
+const static char *
 strpppproto(uint16_t proto)
 {
 	static char buf[sizeof("0x0000")];
@@ -161,7 +161,7 @@ strpppproto(uint16_t proto)
 	return NULL;
 }
 
-static char *
+const static char *
 strlcptype(uint8_t type)
 {
 	static char buf[sizeof("0x0000")];

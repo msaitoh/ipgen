@@ -36,7 +36,7 @@
 #include "gen.h"
 
 static int webserv_output(struct webserv *, char *, int);
-static int webserv_reply_errcode(struct webserv *, int, char *);
+static int webserv_reply_errcode(struct webserv *, int, const char *);
 static int webserv_stream(struct webserv *, char *, int);
 static int webserv_read(struct webserv *);
 static int webserv_connected(struct webserv *);
@@ -52,7 +52,7 @@ static int pathhandler(struct webserv *, char *);
 #ifndef HTDOCS
 #define HTDOCS	"../htdocs/"
 #endif
-char *htdocs;
+const char *htdocs;
 
 
 #define	HTTP_FOUND_APPLICATION_JSON			\
@@ -327,7 +327,7 @@ webserv_new(int fd)
 }
 
 static int
-webserv_reply_errcode(struct webserv *web, int status, char *string)
+webserv_reply_errcode(struct webserv *web, int status, const char *string)
 {
 	fprintf(web->fh, "HTTP/1.0 %03d %s\r\n\r\n%03d %s\n",
 	    status, string, status, string);

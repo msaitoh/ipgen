@@ -97,7 +97,7 @@ ip6pkt_neighbor_solicit(char *buf, const struct ether_addr *sha, struct in6_addr
 	ip6len = len - sizeof(struct ether_header);
 	protolen = ip6len - sizeof(struct ip6_hdr);
 
-	ethpkt_src(buf, (u_char *)sha);
+	ethpkt_src(buf, (const u_char *)sha);
 	ethpkt_dst(buf, edst);
 
 	memset(&daddr, 0, sizeof(daddr));
@@ -152,21 +152,21 @@ ip6pkt_neighbor_parse(char *buf, int *type, struct in6_addr *src, struct in6_add
 int
 ip6pkt_neighbor_solicit_reply(char *buf, const char *solicitbuf, u_char *eaddr, struct in6_addr *addr)
 {
-	struct ether_header *oeheader;
-	struct ether_vlan_header *oevheader;
-	struct ndpkt_l3 *ondpkt_l3;
+	const struct ether_header *oeheader;
+	const struct ether_vlan_header *oevheader;
+	const struct ndpkt_l3 *ondpkt_l3;
 	struct ndpkt_l2 *ndpkt_l2;
 	unsigned int ip6len, protolen;
 	int len;
 
-	oeheader = (struct ether_header *)solicitbuf;
+	oeheader = (const struct ether_header *)solicitbuf;
 	ndpkt_l2 = (struct ndpkt_l2 *)buf;
 
 	if (ntohs(oeheader->ether_type) == ETHERTYPE_VLAN) {
-		ondpkt_l3 = (struct ndpkt_l3 *)(solicitbuf + sizeof(struct ether_vlan_header));
-		oevheader = (struct ether_vlan_header *)oeheader;
+		ondpkt_l3 = (const struct ndpkt_l3 *)(solicitbuf + sizeof(struct ether_vlan_header));
+		oevheader = (const struct ether_vlan_header *)oeheader;
 	} else {
-		ondpkt_l3 = (struct ndpkt_l3 *)(solicitbuf + sizeof(struct ether_header));
+		ondpkt_l3 = (const struct ndpkt_l3 *)(solicitbuf + sizeof(struct ether_header));
 		oevheader = NULL;
 	}
 
@@ -248,10 +248,11 @@ ip6pkt_icmp6_template(char *buf, unsigned int framelen)
 int
 ip6pkt_icmp6_echoreply(char *buf, unsigned int l3offset, const char *reqbuf, unsigned int framelen)
 {
-	struct ip6_hdr *ip6, *rip6;
+	struct ip6_hdr *ip6;
+	const struct ip6_hdr *rip6;
 
 	ip6 = (struct ip6_hdr *)(buf + l3offset);
-	rip6 = (struct ip6_hdr *)(reqbuf + l3offset);
+	rip6 = (const struct ip6_hdr *)(reqbuf + l3offset);
 
 	memcpy(buf, reqbuf, framelen);
 	memcpy(&ip6->ip6_src, &rip6->ip6_dst, sizeof(struct in6_addr));

@@ -124,7 +124,7 @@ pppoepkt_tag_extract(char *buf, uint16_t tag, void *data, uint16_t *datalen)
 }
 
 int
-pppoepkt_tag_add(char *buf, uint16_t tag, void *data, uint16_t datalen)
+pppoepkt_tag_add(char *buf, uint16_t tag, const void *data, uint16_t datalen)
 {
 	struct pppoe_l2 *pppoe;
 	struct pppoetag *pppoetag;

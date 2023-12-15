@@ -45,7 +45,7 @@ struct genscript {
 static inline const char *
 genscript_cmdname(unsigned int cmd)
 {
-	char *cmd2cmdname[] = {
+	const char *cmd2cmdname[] = {
 		"RESET", "NOP", "TX0", "TX1"
 	};
 	if (cmd >= GENITEM_CMD_NCMD)

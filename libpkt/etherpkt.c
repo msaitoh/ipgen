@@ -50,7 +50,7 @@ ethpkt_type(char *buf, u_short type)
 }
 
 int
-ethpkt_src(char *buf, u_char *eaddr)
+ethpkt_src(char *buf, const u_char *eaddr)
 {
 	struct ether_header *eh;
 
@@ -60,7 +60,7 @@ ethpkt_src(char *buf, u_char *eaddr)
 }
 
 int
-ethpkt_dst(char *buf, u_char *eaddr)
+ethpkt_dst(char *buf, const u_char *eaddr)
 {
 	struct ether_header *eh;
 

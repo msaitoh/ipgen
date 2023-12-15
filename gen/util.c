@@ -337,7 +337,7 @@ getiflinkaddr(const char *ifname, struct ether_addr *addr)
 			if ((sdl->sdl_type == IFT_ETHER) &&
 			    (sdl->sdl_alen == ETHER_ADDR_LEN)) {
 
-				memcpy(addr, (struct ether_addr *)LLADDR(sdl), ETHER_ADDR_LEN);
+				memcpy(addr, (const struct ether_addr *)CLLADDR(sdl), ETHER_ADDR_LEN);
 				found = 1;
 				break;
 			}

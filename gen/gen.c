@@ -602,9 +602,9 @@ touchup_tx_packet(char *buf, int ifno)
 		}
 
 		if (iface->gw_l2random)
-			ethpkt_dst(buf, (u_char *)tuple->deaddr.octet);
+			ethpkt_dst(buf, (const u_char *)tuple->deaddr.octet);
 		if (iface_other->gw_l2random)
-			ethpkt_src(buf, (u_char *)tuple->seaddr.octet);
+			ethpkt_src(buf, (const u_char *)tuple->seaddr.octet);
 
 		if (ipv6)
 			l4payloadsize = iface->pktsize - sizeof(struct ip6_hdr);

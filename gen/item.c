@@ -75,7 +75,7 @@ static int itemlist_status(struct itemlist *);
 #define ITEMLIST_STATUS_FOCUS	1
 #define ITEMLIST_STATUS_EDITING	2
 
-static void item_setvalue(struct item *, void *);
+static void item_setvalue(struct item *, const void *);
 static void itemlist_update_editing(struct itemlist *, int);
 static int itemlist_editstart(struct itemlist *);
 static int itemlist_editor(struct itemlist *, int c);
@@ -473,7 +473,7 @@ itemlist_register_item(struct itemlist *itemlist, int id, int (*cb_apply)(struct
 }
 
 static void
-item_setvalue_str(struct item *item, char *str)
+item_setvalue_str(struct item *item, const char *str)
 {
 	strncpy(item->disp.str, str, sizeof(item->disp.str));
 }
@@ -491,7 +491,7 @@ item_setvalue_double(struct item *item, double dbl)
 }
 
 static void
-item_setvalue(struct item *item, void *valueptr)
+item_setvalue(struct item *item, const void *valueptr)
 {
 	if (valueptr == NULL) {
 		item->disp.num = 0;
@@ -501,19 +501,19 @@ item_setvalue(struct item *item, void *valueptr)
 			item_setvalue_str(item, valueptr);
 			break;
 		case ITEMTYPE_UINT8:
-			item_setvalue_num(item, *(uint8_t *)valueptr);
+			item_setvalue_num(item, *(const uint8_t *)valueptr);
 			break;
 		case ITEMTYPE_UINT16:
-			item_setvalue_num(item, *(uint16_t *)valueptr);
+			item_setvalue_num(item, *(const uint16_t *)valueptr);
 			break;
 		case ITEMTYPE_UINT32:
-			item_setvalue_num(item, *(uint32_t *)valueptr);
+			item_setvalue_num(item, *(const uint32_t *)valueptr);
 			break;
 		case ITEMTYPE_UINT64:
-			item_setvalue_num(item, *(uint64_t *)valueptr);
+			item_setvalue_num(item, *(const uint64_t *)valueptr);
 			break;
 		case ITEMTYPE_DOUBLE:
-			item_setvalue_double(item, *(double *)valueptr);
+			item_setvalue_double(item, *(const double *)valueptr);
 			break;
 		}
 	}
@@ -521,7 +521,7 @@ item_setvalue(struct item *item, void *valueptr)
 }
 
 void
-itemlist_setvalue(struct itemlist *itemlist, int id, void *valueptr)
+itemlist_setvalue(struct itemlist *itemlist, int id, const void *valueptr)
 {
 	struct item *item;
 
