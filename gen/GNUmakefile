@@ -4,6 +4,8 @@ PROG=		ipgen
 SRCS=		gen.c util.c webserv.c pbuf.c sequencecheck.c seqtable.c item.c genscript.c flowparse.c pktgen_item.c
 CFLAGS+=	-I.. -I/usr/local/include -g -DHTDOCS=\"${PREFIX}/share/ipgen/htdocs\"
 CFLAGS+=	-Wall -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith
+CFLAGS+=	-Wreturn-type -Wswitch # -Wshadow XXX for gen.c
+CFLAGS+=	-Wcast-qual -Wwrite-strings
 LDADD=		-L../libpkt -lpkt -L../libaddrlist -L/usr/local/lib -laddrlist -lpthread -lc -lcurses -levent -lmd
 
 ifeq ($(shell uname),Linux)
