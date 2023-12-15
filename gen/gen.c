@@ -3490,9 +3490,6 @@ static void
 evt_timeout_callback(evutil_socket_t fd, short event, void *arg)
 {
 	struct itemlist *itemlist;
-	static int nth = 0;
-
-	nth++;
 
 	if (do_quit) {
 		quit(false);
