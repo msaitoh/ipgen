@@ -547,7 +547,7 @@ ndpresolv(const char *ifname, int vlan, struct in6_addr *src, struct in6_addr *d
 }
 
 static int
-bpfslot()
+bpfslot(void)
 {
 	int fd, i;
 

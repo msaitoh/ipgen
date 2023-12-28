@@ -627,7 +627,7 @@ main(int argc, char *argv[])
 
 
 static int
-bpfslot()
+bpfslot(void)
 {
 	int fd;
 
