@@ -231,7 +231,7 @@ struct nm_desc {
  * when the descriptor is open correctly, d->self == d
  * Eventually we should also use some magic number.
  */
-#define P2NMD(p)		((struct nm_desc *)(p))
+#define P2NMD(p)		((const struct nm_desc *)(p))
 #define IS_NETMAP_DESC(d)	((d) && P2NMD(d)->self == P2NMD(d))
 #define NETMAP_FD(d)		(P2NMD(d)->fd)
 

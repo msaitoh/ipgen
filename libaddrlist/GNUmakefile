@@ -4,7 +4,9 @@ TARGETLIB=	libaddrlist.a
 SRCS+=		addresses.c
 
 CFLAGS+=	-O2
-CFLAGS+=	-Wall
+CFLAGS+=	-Wall -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith
+CFLAGS+=	-Wreturn-type -Wswitch -Wshadow
+CFLAGS+=	-Wcast-qual -Wwrite-strings
 CFLAGS+=	-Wno-address-of-packed-member
 
 OBJS+=	$(SRCS:%.c=%.o)

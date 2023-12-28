@@ -601,7 +601,7 @@ addresslist_dump(struct addresslist *adrlist)
 	unsigned int n;
 	char buf1[128], buf2[128];
 	char ebuf1[sizeof("00:00:00:00:00:00")], ebuf2[sizeof("00:00:00:00:00:00")];
-	char *bracket_l, *bracket_r;
+	const char *bracket_l, *bracket_r;
 
 	printf("<addresslist p=%p sorted=%d ntuple=%u curtuple=%u>\n",
 	    adrlist, adrlist->sorted,

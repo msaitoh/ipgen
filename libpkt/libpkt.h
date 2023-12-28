@@ -217,8 +217,8 @@ unsigned int in_cksum(unsigned int, char *, unsigned int);
 /* etherpkt.c */
 int ethpkt_template(char *, unsigned int);
 int ethpkt_type(char *, u_short);
-int ethpkt_src(char *, u_char *);
-int ethpkt_dst(char *, u_char *);
+int ethpkt_src(char *, const u_char *);
+int ethpkt_dst(char *, const u_char *);
 
 /* pppoepkt.c */
 int pppoepkt_template(char *, uint16_t);
@@ -228,7 +228,7 @@ int pppoepkt_session(char *, uint16_t);
 int pppoepkt_type(char *, uint16_t);
 int pppoepkt_length(char *, uint16_t);
 int pppoepkt_tag_extract(char *, uint16_t, void *, uint16_t *);
-int pppoepkt_tag_add(char *, uint16_t, void *, uint16_t);
+int pppoepkt_tag_add(char *, uint16_t, const void *, uint16_t);
 int pppoepkt_ppp_set(char *, uint16_t, uint8_t, uint8_t);
 int pppoepkt_ppp_extract_data(char *, int, void *, int);
 int pppoepkt_ppp_add_data(char *, void *, uint16_t);

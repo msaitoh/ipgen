@@ -376,7 +376,45 @@ struct timespec currenttime_main;
 struct timespec starttime_tx;
 sigset_t used_sigset;
 
-unsigned int
+static unsigned int build_template_packet_ipv4(int, char *);
+static unsigned int build_template_packet_ipv6(int, char *);
+static void touchup_tx_packet(char *, int);
+static int packet_generator(char *, int);
+#ifdef __linux__
+static int getdrvname(const char *, char *);
+#else
+static int getifunit(const char *, char *, unsigned long *);
+#endif
+static void interface_wait_linkup(const char *);
+static void interface_init(int);
+static void interface_setup(int, const char *);
+static void interface_open(int);
+static void interface_close(int);
+static int interface_need_transmit(int);
+static int interface_load_transmit_packet(int, char *, uint16_t *);
+static void icmpecho_handler(int, char *, int, int);
+static void arp_handler(int, char *, int);
+static void ndp_handler(int, char *, int);
+#ifdef SUPPORT_PPPOE
+static int pppoe_handler(int, char *);
+#endif
+static void receive_packet(int, struct timespec *, char *, uint16_t);
+static void interface_receive(int);
+static int interface_transmit(int);
+static void *tx_thread_main(void *);
+static void *rx_thread_main(void *);
+static void genscript_play(int unsigned);
+static void rfc2544_add_test(uint64_t, unsigned int);
+static void rfc2544_load_default_test(uint64_t);
+static void rfc2544_calc_param(uint64_t);
+static void rfc2544_test(int unsigned);
+static void control_init_items(struct itemlist *);
+static void *control_thread_main(void *);
+static void gentest_main(void);
+static void generate_addrlists(void);
+
+
+static unsigned int
 build_template_packet_ipv4(int ifno, char *pkt)
 {
 	if (ifno == 0) {
@@ -396,7 +434,7 @@ build_template_packet_ipv4(int ifno, char *pkt)
 	return interface[ifno].pktsize;
 }
 
-unsigned int
+static unsigned int
 build_template_packet_ipv6(int ifno, char *pkt)
 {
 	if (ifno == 0) {
@@ -476,7 +514,7 @@ pktcpy_pppoe(char *dstbuf, char *srcbuf, unsigned int pktsize, uint16_t session,
 }
 #endif
 
-void
+static void
 touchup_tx_packet(char *buf, int ifno)
 {
 	struct interface *iface = &interface[ifno];
@@ -564,9 +602,9 @@ touchup_tx_packet(char *buf, int ifno)
 		}
 
 		if (iface->gw_l2random)
-			ethpkt_dst(buf, (u_char *)tuple->deaddr.octet);
+			ethpkt_dst(buf, (const u_char *)tuple->deaddr.octet);
 		if (iface_other->gw_l2random)
-			ethpkt_src(buf, (u_char *)tuple->seaddr.octet);
+			ethpkt_src(buf, (const u_char *)tuple->seaddr.octet);
 
 		if (ipv6)
 			l4payloadsize = iface->pktsize - sizeof(struct ip6_hdr);
@@ -592,7 +630,7 @@ touchup_tx_packet(char *buf, int ifno)
 	}
 }
 
-int
+static int
 packet_generator(char *buf, int ifno)
 {
 	struct interface *iface = &interface[ifno];
@@ -626,7 +664,7 @@ statistics_clear(void)
 }
 
 #ifdef __linux__
-int
+static int
 getdrvname(const char *ifname, char *drvname)
 {
 	ssize_t n;
@@ -649,7 +687,7 @@ getdrvname(const char *ifname, char *drvname)
 	return 0;
 }
 #else
-int
+static int
 getifunit(const char *ifname, char *drvname, unsigned long *unit)
 {
 	int i;
@@ -1100,7 +1138,7 @@ transmit_set(int ifno, int on)
 	update_transmit_Mbps(ifno);
 }
 
-void
+static void
 interface_wait_linkup(const char *ifname)
 {
 	int i;
@@ -1122,14 +1160,14 @@ interface_wait_linkup(const char *ifname)
 	fflush(stdout);
 }
 
-void
+static void
 interface_init(int ifno)
 {
 	interface[ifno].seqtable = seqtable_new();
 	interface[ifno].seqchecker = seqcheck_new();
 }
 
-void
+static void
 interface_setup(int ifno, const char *ifname)
 {
 	struct interface *iface = &interface[ifno];
@@ -1207,7 +1245,7 @@ interface_setup(int ifno, const char *ifname)
 	}
 }
 
-void
+static void
 interface_open(int ifno)
 {
 	struct interface *iface = &interface[ifno];
@@ -1312,7 +1350,7 @@ interface_close(int ifno)
 	}
 }
 
-int
+static int
 interface_need_transmit(int ifno)
 {
 	int n;
@@ -1325,7 +1363,7 @@ interface_need_transmit(int ifno)
 	return n;
 }
 
-int
+static int
 interface_load_transmit_packet(int ifno, char *buf, uint16_t *lenp)
 {
 	struct interface *iface = &interface[ifno];
@@ -1363,7 +1401,7 @@ interface_load_transmit_packet(int ifno, char *buf, uint16_t *lenp)
 	return -1;
 }
 
-void
+static void
 icmpecho_handler(int ifno, char *pkt, int len, int l3offset)
 {
 	struct interface *iface = &interface[ifno];
@@ -1386,7 +1424,7 @@ icmpecho_handler(int ifno, char *pkt, int len, int l3offset)
 	}
 }
 
-void
+static void
 arp_handler(int ifno, char *pkt, int l3offset)
 {
 	struct interface *iface = &interface[ifno];
@@ -1481,7 +1519,7 @@ ndp_handler(int ifno, char *pkt, int l3offset)
 }
 
 #ifdef SUPPORT_PPPOE
-int
+static int
 pppoe_handler(int ifno, char *pkt)
 {
 	struct pppoe_l2 *req;
@@ -1536,7 +1574,7 @@ pppoe_handler(int ifno, char *pkt)
 }
 #endif
 
-void
+static void
 receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 {
 	struct interface *iface = &interface[ifno];
@@ -1721,7 +1759,7 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 	}
 }
 
-void
+static void
 interface_receive(int ifno)
 {
 	struct interface *iface = &interface[ifno];
@@ -2316,7 +2354,7 @@ logging(char const *fmt, ...)
 }
 
 
-void *
+static void *
 tx_thread_main(void *arg)
 {
 	int ifno = *(int *)arg;
@@ -2347,7 +2385,7 @@ tx_thread_main(void *arg)
 	return NULL;
 }
 
-void *
+static void *
 rx_thread_main(void *arg)
 {
 	int ifno = *(int *)arg;
@@ -2387,7 +2425,7 @@ rx_thread_main(void *arg)
 
 
 
-void
+static void
 genscript_play(int unsigned n)
 {
 	static int nth_test = -1;
@@ -2535,7 +2573,7 @@ typedef enum {
 	RFC2544_DONE
 } rfc2544_state_t;
 
-void
+static void
 rfc2544_add_test(uint64_t maxlinkspeed, unsigned int pktsize)
 {
 	struct rfc2544_work *work = &rfc2544_work[rfc2544_ntest];
@@ -2557,7 +2595,7 @@ rfc2544_add_test(uint64_t maxlinkspeed, unsigned int pktsize)
 	rfc2544_ntest++;
 }
 
-void
+static void
 rfc2544_load_default_test(uint64_t maxlinkspeed)
 {
 	rfc2544_ntest = 0;	/* clear table */
@@ -2570,7 +2608,7 @@ rfc2544_load_default_test(uint64_t maxlinkspeed)
 	rfc2544_add_test(maxlinkspeed, 1518 - ETHHDRSIZE - FCS);
 }
 
-void
+static void
 rfc2544_calc_param(uint64_t maxlinkspeed)
 {
 	int i;
@@ -2842,8 +2880,8 @@ rfc2544_up_pps(void)
 	return 0;
 }
 
-void
-rfc2544_test(int unsigned n)
+static void
+rfc2544_test(unsigned int n)
 {
 	struct rfc2544_work *work = &rfc2544_work[rfc2544_nthtest];
 	static rfc2544_state_t state = RFC2544_START;
@@ -3279,7 +3317,7 @@ itemlist_callback_startstop(struct itemlist *itemlist, struct item *item, void *
 	return 0;
 }
 
-void
+static void
 control_init_items(struct itemlist *itemlist)
 {
 	static char ipgen_api[16];
@@ -3452,9 +3490,6 @@ static void
 evt_timeout_callback(evutil_socket_t fd, short event, void *arg)
 {
 	struct itemlist *itemlist;
-	static int nth = 0;
-
-	nth++;
 
 	if (do_quit) {
 		quit(false);
@@ -3466,7 +3501,7 @@ evt_timeout_callback(evutil_socket_t fd, short event, void *arg)
 }
 
 
-void *
+static void *
 control_thread_main(void *arg)
 {
 	struct event ev_tty;
@@ -3501,7 +3536,7 @@ control_thread_main(void *arg)
 	return NULL;
 }
 
-void
+static void
 gentest_main(void)
 {
 	time_t lastsec = 0;
@@ -3658,7 +3693,7 @@ parse_address(const int ifno, char *s)
 	}
 }
 
-void
+static void
 generate_addrlists(void)
 {
 	int rc;

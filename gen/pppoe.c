@@ -112,7 +112,7 @@ strmacaddr(const uint8_t *eth)
 	return buf;
 }
 
-static char *
+const static char *
 strpppoecode(uint8_t code)
 {
 	static char buf[sizeof("0x00")];
@@ -134,7 +134,7 @@ strpppoecode(uint8_t code)
 	return buf;
 }
 
-static char *
+const static char *
 strpppproto(uint16_t proto)
 {
 	static char buf[sizeof("0x0000")];
@@ -161,7 +161,7 @@ strpppproto(uint16_t proto)
 	return NULL;
 }
 
-static char *
+const static char *
 strlcptype(uint8_t type)
 {
 	static char buf[sizeof("0x0000")];
@@ -250,7 +250,6 @@ recv_pppoe(void *arg, int fd, char *buf, int buflen, const char *ifname)
 {
 	struct pppoe_softc *sc;
 	struct pppoe_l2 *req;
-	struct pppoeppp *pppreq;
 	char pktbuf[2048];
 	unsigned char pppopt[128];
 	uint16_t etype;
@@ -264,7 +263,6 @@ recv_pppoe(void *arg, int fd, char *buf, int buflen, const char *ifname)
 #endif
 
 	req = (struct pppoe_l2 *)buf;
-	pppreq = (struct pppoeppp *)(req + 1);
 
 	/* ignore packets sent by itself */
 	if (memcmp(&sc->srcmac, req->eheader.ether_shost, ETHER_ADDR_LEN) == 0)
@@ -526,10 +524,7 @@ pppoe_server(const char *ifname, struct pppoe_softc *sc)
 	fd_set rfd;
 	struct timeval tlim;
 	struct ether_addr macaddr;
-	struct ether_addr *found;
 	int fd, rc, mtu, error, established = 0;
-
-	found = NULL;
 
 	fd = bpfopen(ifname, 0, &bpfbuflen);
 	if (fd < 0) {
@@ -627,7 +622,7 @@ main(int argc, char *argv[])
 
 
 static int
-bpfslot()
+bpfslot(void)
 {
 	int fd;
 

@@ -36,6 +36,9 @@
 #include "flowparse.h"
 #include "util.h"
 
+static int parse_addr6_port(char *, struct in6_addr *, struct in6_addr *,
+    uint16_t *, uint16_t *);
+
 /*
  * parse "12345-23456"
  *       "12345"
@@ -155,7 +158,7 @@ parse_addr_port(char *str, struct in_addr *addrstart, struct in_addr *addrend, u
 	return 0;
 }
 
-int
+static int
 parse_addr6_port(char *str, struct in6_addr *addr6start, struct in6_addr *addr6end, uint16_t *portstart, uint16_t *portend)
 {
 	char *p0, *p;
