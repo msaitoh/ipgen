@@ -376,6 +376,44 @@ struct timespec currenttime_main;
 struct timespec starttime_tx;
 sigset_t used_sigset;
 
+static unsigned int build_template_packet_ipv4(int, char *);
+static unsigned int build_template_packet_ipv6(int, char *);
+static void touchup_tx_packet(char *, int);
+static int packet_generator(char *, int);
+#ifdef __linux__
+static int getdrvname(const char *, char *);
+#else
+static int getifunit(const char *, char *, unsigned long *);
+#endif
+static void interface_wait_linkup(const char *);
+static void interface_init(int);
+static void interface_setup(int, const char *);
+static void interface_open(int);
+static void interface_close(int);
+static int interface_need_transmit(int);
+static int interface_load_transmit_packet(int, char *, uint16_t *);
+static void icmpecho_handler(int, char *, int, int);
+static void arp_handler(int, char *, int);
+static void ndp_handler(int, char *, int);
+#ifdef SUPPORT_PPPOE
+static int pppoe_handler(int, char *);
+#endif
+static void receive_packet(int, struct timespec *, char *, uint16_t);
+static void interface_receive(int);
+static int interface_transmit(int);
+static void *tx_thread_main(void *);
+static void *rx_thread_main(void *);
+static void genscript_play(int unsigned);
+static void rfc2544_add_test(uint64_t, unsigned int);
+static void rfc2544_load_default_test(uint64_t);
+static void rfc2544_calc_param(uint64_t);
+static void rfc2544_test(int unsigned);
+static void control_init_items(struct itemlist *);
+static void *control_thread_main(void *);
+static void gentest_main(void);
+static void generate_addrlists(void);
+
+
 static unsigned int
 build_template_packet_ipv4(int ifno, char *pkt)
 {

@@ -79,6 +79,9 @@
 #define s6_addr32 __u6_addr.__u6_addr32
 #endif
 
+static int ip6pkt_icmp_uint8(char *, unsigned int, int, uint8_t);
+static int ip6pkt_icmp_uint16(char *, unsigned int, int, uint16_t);
+
 int
 ip6pkt_neighbor_solicit(char *buf, const struct ether_addr *sha, struct in6_addr *addr1, struct in6_addr *addr2)
 {

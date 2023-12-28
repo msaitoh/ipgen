@@ -46,6 +46,7 @@ static int handler_index(struct webserv *, const char *path, int argc, char *arg
 static int handler_stat(struct webserv *, const char *path, int argc, char *argv[]);
 static int handler_clear(struct webserv *, const char *path, int argc, char *argv[]);
 static int handler_interface(struct webserv *, const char *path, int argc, char *argv[]);
+static int pathhandler(struct webserv *, char *);
 
 
 #ifndef HTDOCS

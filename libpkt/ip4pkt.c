@@ -41,6 +41,9 @@
 #define IPPROTO_IPV4	4
 #endif
 
+static int ip4pkt_icmp_uint8(char *, unsigned int, int, uint8_t);
+static int ip4pkt_icmp_uint16(char *, unsigned int, int, uint16_t);
+
 int
 ip4pkt_arpparse(char *buf, int *op, struct ether_addr *sha, in_addr_t *spa, in_addr_t *tpa)
 {
