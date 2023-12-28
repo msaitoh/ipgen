@@ -155,7 +155,7 @@ parse_addr_port(char *str, struct in_addr *addrstart, struct in_addr *addrend, u
 	return 0;
 }
 
-int
+static int
 parse_addr6_port(char *str, struct in6_addr *addr6start, struct in6_addr *addr6end, uint16_t *portstart, uint16_t *portend)
 {
 	char *p0, *p;

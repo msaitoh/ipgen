@@ -212,7 +212,7 @@ handler_interface(struct webserv *web, const char *path, int argc, char *argv[])
 	return 0;
 }
 
-int
+static int
 pathhandler(struct webserv *web, char *path)
 {
 	struct urlhandler *match;

@@ -778,7 +778,7 @@ ip6pkt_getptr(char *buf, unsigned int l3offset, unsigned int offset)
 	return datap;
 }
 
-int
+static int
 ip6pkt_icmp_uint8(char *buf, unsigned int l3offset, int icmpoffset, uint8_t data)
 {
 	struct ip6_hdr *ip6;
@@ -819,7 +819,7 @@ ip6pkt_icmp_uint8(char *buf, unsigned int l3offset, int icmpoffset, uint8_t data
 	return 0;
 }
 
-int
+static int
 ip6pkt_icmp_uint16(char *buf, unsigned int l3offset, int icmpoffset, uint16_t data)
 {
 	struct ip6_hdr *ip6;
