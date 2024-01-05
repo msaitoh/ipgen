@@ -1,34 +1,34 @@
-Index: sys/dev/ixgbe/if_ix.c
-===================================================================
---- sys/dev/ixgbe/if_ix.c	(revision 338851)
-+++ sys/dev/ixgbe/if_ix.c	(working copy)
-@@ -180,6 +180,7 @@ static int      ixgbe_get_advertise(stru
- static void     ixgbe_set_sysctl_value(struct adapter *, const char *,
-                                        const char *, int *, int);
- static int      ixgbe_sysctl_flowcntl(SYSCTL_HANDLER_ARGS);
-+static int	ixgbe_sysctl_dpf(SYSCTL_HANDLER_ARGS);
- static int      ixgbe_sysctl_advertise(SYSCTL_HANDLER_ARGS);
- static int      ixgbe_sysctl_interrupt_rate_handler(SYSCTL_HANDLER_ARGS);
- static int      ixgbe_sysctl_dmac(SYSCTL_HANDLER_ARGS);
-@@ -196,6 +197,8 @@ static int      ixgbe_sysctl_tdh_handler
- static int      ixgbe_sysctl_eee_state(SYSCTL_HANDLER_ARGS);
- static int      ixgbe_sysctl_wol_enable(SYSCTL_HANDLER_ARGS);
- static int      ixgbe_sysctl_wufc(SYSCTL_HANDLER_ARGS);
-+static int	ixgbe_sysctl_tipg(SYSCTL_HANDLER_ARGS);
-+static int	ixgbe_sysctl_pap(SYSCTL_HANDLER_ARGS);
+diff --git a/sys/dev/ixgbe/if_ix.c b/sys/dev/ixgbe/if_ix.c
+index 9f3674cdab5..c0f59044be7 100644
+--- a/sys/dev/ixgbe/if_ix.c
++++ b/sys/dev/ixgbe/if_ix.c
+@@ -191,6 +191,7 @@ static void ixgbe_config_delay_values(struct adapter *adapter);
  
- /* Support for pluggable optic modules */
- static bool     ixgbe_sfp_probe(struct adapter *);
-@@ -492,7 +495,7 @@ ixgbe_initialize_receive_units(struct ad
- 	struct ixgbe_hw *hw = &adapter->hw;
- 	struct ifnet    *ifp = adapter->ifp;
- 	int             i, j;
--	u32             bufsz, fctrl, srrctl, rxcsum;
-+	u32             bufsz, fctrl, mflcn, srrctl, rxcsum;
- 	u32             hlreg;
+ /* Sysctl handlers */
+ static int  ixgbe_sysctl_flowcntl(SYSCTL_HANDLER_ARGS);
++static int  ixgbe_sysctl_dpf(SYSCTL_HANDLER_ARGS);
+ static int  ixgbe_sysctl_advertise(SYSCTL_HANDLER_ARGS);
+ static int  ixgbe_sysctl_interrupt_rate_handler(SYSCTL_HANDLER_ARGS);
+ static int  ixgbe_sysctl_dmac(SYSCTL_HANDLER_ARGS);
+@@ -207,6 +208,8 @@ static int  ixgbe_sysctl_tdh_handler(SYSCTL_HANDLER_ARGS);
+ static int  ixgbe_sysctl_eee_state(SYSCTL_HANDLER_ARGS);
+ static int  ixgbe_sysctl_wol_enable(SYSCTL_HANDLER_ARGS);
+ static int  ixgbe_sysctl_wufc(SYSCTL_HANDLER_ARGS);
++static int  ixgbe_sysctl_tipg(SYSCTL_HANDLER_ARGS);
++static int  ixgbe_sysctl_pap(SYSCTL_HANDLER_ARGS);
+ 
+ /* Deferred interrupt tasklets */
+ static void ixgbe_handle_msf(void *);
+@@ -666,7 +669,7 @@ ixgbe_initialize_receive_units(if_ctx_t ctx)
+ 	struct ifnet       *ifp = iflib_get_ifp(ctx);
+ 	struct ix_rx_queue *que;
+ 	int                i, j;
+-	u32                bufsz, fctrl, srrctl, rxcsum;
++	u32                bufsz, fctrl, mflcn, srrctl, rxcsum;
+ 	u32                hlreg;
  
  	/*
-@@ -505,8 +508,17 @@ ixgbe_initialize_receive_units(struct ad
+@@ -679,8 +682,17 @@ ixgbe_initialize_receive_units(if_ctx_t ctx)
  	fctrl = IXGBE_READ_REG(hw, IXGBE_FCTRL);
  	fctrl |= IXGBE_FCTRL_BAM;
  	if (adapter->hw.mac.type == ixgbe_mac_82598EB) {
@@ -47,43 +47,44 @@ Index: sys/dev/ixgbe/if_ix.c
  	}
  	IXGBE_WRITE_REG(hw, IXGBE_FCTRL, fctrl);
  
-@@ -792,6 +804,7 @@ ixgbe_attach(device_t dev)
+@@ -940,6 +952,7 @@ ixgbe_if_attach_pre(if_ctx_t ctx)
  
  	/* Set an initial default flow control value */
  	hw->fc.requested_mode = ixgbe_flow_control;
 +	adapter->dpf = 1;
  
- 	/* Sysctls for limiting the amount of work done in the taskqueues */
- 	ixgbe_set_sysctl_value(adapter, "rx_processing_limit",
-@@ -2493,6 +2506,10 @@ ixgbe_add_device_sysctls(struct adapter 
- 	SYSCTL_ADD_PROC(ctx, child, OID_AUTO, "fc", CTLTYPE_INT | CTLFLAG_RW,
- 	    adapter, 0, ixgbe_sysctl_flowcntl, "I", IXGBE_SYSCTL_DESC_SET_FC);
+ 	hw->phy.reset_if_overtemp = TRUE;
+ 	error = ixgbe_reset_hw(hw);
+@@ -2572,11 +2585,28 @@ ixgbe_add_device_sysctls(if_ctx_t ctx)
+ 	    adapter, 0, ixgbe_sysctl_flowcntl, "I",
+ 	    IXGBE_SYSCTL_DESC_SET_FC);
  
-+	SYSCTL_ADD_PROC(ctx, child, OID_AUTO, "dpf",
-+	    CTLTYPE_INT | CTLFLAG_RW, adapter, 0,
-+	    ixgbe_sysctl_dpf, "I", IXGBE_SYSCTL_DESC_SET_DPF);
++	SYSCTL_ADD_PROC(ctx_list, child, OID_AUTO, "dpf",
++	    CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_NEEDGIANT,
++	    adapter, 0, ixgbe_sysctl_dpf, "I",
++	    IXGBE_SYSCTL_DESC_SET_DPF);
 +
- 	adapter->enable_aim = ixgbe_enable_aim;
- 	SYSCTL_ADD_INT(ctx, child, OID_AUTO, "enable_aim", CTLFLAG_RW,
- 	    &adapter->enable_aim, 1, "Interrupt Moderation");
-@@ -2501,6 +2518,16 @@ ixgbe_add_device_sysctls(struct adapter 
- 	    CTLTYPE_INT | CTLFLAG_RW, adapter, 0, ixgbe_sysctl_advertise, "I",
+ 	SYSCTL_ADD_PROC(ctx_list, child, OID_AUTO, "advertise_speed",
+ 	    CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_NEEDGIANT,
+ 	    adapter, 0, ixgbe_sysctl_advertise, "I",
  	    IXGBE_SYSCTL_DESC_ADV_SPEED);
  
 +	if (hw->mac.type == ixgbe_mac_82598EB)
-+		SYSCTL_ADD_PROC(ctx, child, OID_AUTO, "tipg",
-+		    CTLTYPE_INT | CTLFLAG_RW, adapter, 0,
-+			ixgbe_sysctl_tipg, "I", "Transmit IPG register");
++		SYSCTL_ADD_PROC(ctx_list, child, OID_AUTO, "tipg",
++		    CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_NEEDGIANT,
++		    adapter, 0,
++		    ixgbe_sysctl_tipg, "I", "Transmit IPG register");
 +
 +	else if (hw->mac.type <= ixgbe_mac_X550EM_x)
-+		SYSCTL_ADD_PROC(ctx, child, OID_AUTO, "pap",
-+			CTLTYPE_INT | CTLFLAG_RW, adapter, 0,
-+			ixgbe_sysctl_pap, "I", "Pause and Pace register");
-+	
++		SYSCTL_ADD_PROC(ctx_list, child, OID_AUTO, "pap",
++		    CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_NEEDGIANT,
++		    adapter, 0,
++		    ixgbe_sysctl_pap, "I", "Pause and Pace register");
++
  #ifdef IXGBE_DEBUG
  	/* testing sysctls (for all devices) */
- 	SYSCTL_ADD_PROC(ctx, child, OID_AUTO, "power_state",
-@@ -4038,6 +4065,48 @@ ixgbe_disable_rx_drop(struct adapter *ad
+ 	SYSCTL_ADD_PROC(ctx_list, child, OID_AUTO, "power_state",
+@@ -3996,6 +4026,48 @@ ixgbe_disable_rx_drop(struct adapter *adapter)
  	}
  } /* ixgbe_disable_rx_drop */
  
@@ -132,9 +133,9 @@ Index: sys/dev/ixgbe/if_ix.c
  /************************************************************************
   * ixgbe_sysctl_advertise
   *
-@@ -5225,6 +5294,51 @@ msi:
+@@ -4314,6 +4386,53 @@ ixgbe_sysctl_wufc(SYSCTL_HANDLER_ARGS)
  	return (0);
- } /* ixgbe_configure_interrupts */
+ } /* ixgbe_sysctl_wufc */
  
 +/* 82598 only */
 +static int
@@ -175,28 +176,30 @@ Index: sys/dev/ixgbe/if_ix.c
 +	reg &= ~IXGBE_PAP_PACE_MASK;
 +	if ((value < 0) || ((value > 9) && (value != 15)))
 +		return EINVAL;
-+	
++
 +	reg |= value << 16;
 +	IXGBE_WRITE_REG(&adapter->hw, IXGBE_PAP, reg);
 +
 +	return (0);
 +}
- 
++
++
+ #ifdef IXGBE_DEBUG
  /************************************************************************
-  * ixgbe_handle_link - Tasklet for MSI-X Link interrupts
-Index: sys/dev/ixgbe/ixgbe.h
-===================================================================
---- sys/dev/ixgbe/ixgbe.h	(revision 338851)
-+++ sys/dev/ixgbe/ixgbe.h	(working copy)
-@@ -445,6 +445,7 @@ struct adapter {
+  * ixgbe_sysctl_print_rss_config
+diff --git a/sys/dev/ixgbe/ixgbe.h b/sys/dev/ixgbe/ixgbe.h
+index 30dd1d5368f..74331fef8a8 100644
+--- a/sys/dev/ixgbe/ixgbe.h
++++ b/sys/dev/ixgbe/ixgbe.h
+@@ -408,6 +408,7 @@ struct adapter {
  
  	/* Info about the interface */
  	int                     advertise;  /* link speeds */
 +	u32			dpf; /* discard pausse frame setting */
- 	int                     enable_aim; /* adaptive interrupt moderation */
  	bool                    link_active;
- 	u16                     max_frame_size;
-@@ -619,6 +620,11 @@ struct adapter {
+ 	u16                     num_segs;
+ 	u32                     link_speed;
+@@ -536,6 +537,11 @@ struct adapter {
          "\t2 - tx pause\n" \
          "\t3 - tx and rx pause"
  
@@ -205,14 +208,14 @@ Index: sys/dev/ixgbe/ixgbe.h
 +	"\t0 - send to the host\n" \
 +	"\t1 - not send to the host"
 +
- /* Workaround to make 8.0 buildable */
- #if __FreeBSD_version >= 800000 && __FreeBSD_version < 800504
- static __inline int
-Index: sys/dev/ixgbe/ixgbe_82598.c
-===================================================================
---- sys/dev/ixgbe/ixgbe_82598.c	(revision 338851)
-+++ sys/dev/ixgbe/ixgbe_82598.c	(working copy)
-@@ -515,7 +515,6 @@ s32 ixgbe_fc_enable_82598(struct ixgbe_h
+ #define IXGBE_SYSCTL_DESC_RX_ERRS \
+ 		"\nSum of the following RX errors counters:\n" \
+ 		" * CRC errors,\n" \
+diff --git a/sys/dev/ixgbe/ixgbe_82598.c b/sys/dev/ixgbe/ixgbe_82598.c
+index 7c821aea2d0..9f8b68947d5 100644
+--- a/sys/dev/ixgbe/ixgbe_82598.c
++++ b/sys/dev/ixgbe/ixgbe_82598.c
+@@ -516,7 +516,6 @@ s32 ixgbe_fc_enable_82598(struct ixgbe_hw *hw)
  	}
  
  	/* Set 802.3x based flow control settings. */
@@ -220,11 +223,11 @@ Index: sys/dev/ixgbe/ixgbe_82598.c
  	IXGBE_WRITE_REG(hw, IXGBE_FCTRL, fctrl_reg);
  	IXGBE_WRITE_REG(hw, IXGBE_RMCS, rmcs_reg);
  
-Index: sys/dev/ixgbe/ixgbe_common.c
-===================================================================
---- sys/dev/ixgbe/ixgbe_common.c	(revision 338851)
-+++ sys/dev/ixgbe/ixgbe_common.c	(working copy)
-@@ -2893,7 +2893,6 @@ s32 ixgbe_fc_enable_generic(struct ixgbe
+diff --git a/sys/dev/ixgbe/ixgbe_common.c b/sys/dev/ixgbe/ixgbe_common.c
+index d7da9f81fbf..dbb586f814e 100644
+--- a/sys/dev/ixgbe/ixgbe_common.c
++++ b/sys/dev/ixgbe/ixgbe_common.c
+@@ -2898,7 +2898,6 @@ s32 ixgbe_fc_enable_generic(struct ixgbe_hw *hw)
  	}
  
  	/* Set 802.3x based flow control settings. */
@@ -232,11 +235,11 @@ Index: sys/dev/ixgbe/ixgbe_common.c
  	IXGBE_WRITE_REG(hw, IXGBE_MFLCN, mflcn_reg);
  	IXGBE_WRITE_REG(hw, IXGBE_FCCFG, fccfg_reg);
  
-Index: sys/dev/ixgbe/ixgbe_type.h
-===================================================================
---- sys/dev/ixgbe/ixgbe_type.h	(revision 338851)
-+++ sys/dev/ixgbe/ixgbe_type.h	(working copy)
-@@ -529,6 +529,7 @@
+diff --git a/sys/dev/ixgbe/ixgbe_type.h b/sys/dev/ixgbe/ixgbe_type.h
+index fc5f191ee65..11fa14a0049 100644
+--- a/sys/dev/ixgbe/ixgbe_type.h
++++ b/sys/dev/ixgbe/ixgbe_type.h
+@@ -570,6 +570,7 @@ struct ixgbe_nvm_version {
  /* Tx DCA Control register : 128 of these (0-127) */
  #define IXGBE_DCA_TXCTRL_82599(_i)	(0x0600C + ((_i) * 0x40))
  #define IXGBE_TIPG			0x0CB00
@@ -244,7 +247,7 @@ Index: sys/dev/ixgbe/ixgbe_type.h
  #define IXGBE_TXPBSIZE(_i)		(0x0CC00 + ((_i) * 4)) /* 8 of these */
  #define IXGBE_MNGTXMAP			0x0CD10
  #define IXGBE_TIPG_FIBER_DEFAULT	3
-@@ -1821,6 +1822,7 @@ enum {
+@@ -1857,6 +1858,7 @@ enum {
  
  /* PAP bit masks*/
  #define IXGBE_PAP_TXPAUSECNT_MASK	0x0000FFFF /* Pause counter mask */
