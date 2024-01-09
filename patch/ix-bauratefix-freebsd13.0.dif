@@ -1,30 +1,24 @@
-Index: sys/dev/ixgbe/if_ix.c
-===================================================================
---- sys/dev/ixgbe/if_ix.c	(revision 338851)
-+++ sys/dev/ixgbe/if_ix.c	(working copy)
-@@ -3616,6 +3616,8 @@ ixgbe_update_link_status(struct adapter 
+diff --git a/sys/dev/ixgbe/if_ix.c b/sys/dev/ixgbe/if_ix.c
+index 9f3674cdab5..9a935f76318 100644
+--- a/sys/dev/ixgbe/if_ix.c
++++ b/sys/dev/ixgbe/if_ix.c
+@@ -3556,9 +3556,8 @@ ixgbe_if_update_admin_status(if_ctx_t ctx)
  			ixgbe_fc_enable(&adapter->hw);
  			/* Update DMA coalescing config */
  			ixgbe_config_dmac(adapter);
-+			if_setbaudrate(ifp,
+-			/* should actually be negotiated value */
+-			iflib_link_state_change(ctx, LINK_STATE_UP, IF_Gbps(10));
+-
++			iflib_link_state_change(ctx, LINK_STATE_UP,
 +			    ixgbe_baudrate(adapter->link_speed));
- 			if_link_state_change(ifp, LINK_STATE_UP);
  			if (adapter->feat_en & IXGBE_FEATURE_SRIOV)
  				ixgbe_ping_all_vfs(adapter);
-@@ -3624,6 +3626,8 @@ ixgbe_update_link_status(struct adapter 
- 		if (adapter->link_active == TRUE) {
- 			if (bootverbose)
- 				device_printf(dev, "Link is Down\n");
-+			if_setbaudrate(ifp,
-+			    ixgbe_baudrate(adapter->link_speed));
- 			if_link_state_change(ifp, LINK_STATE_DOWN);
- 			adapter->link_active = FALSE;
- 			if (adapter->feat_en & IXGBE_FEATURE_SRIOV)
-Index: sys/dev/ixgbe/ixgbe_common.c
-===================================================================
---- sys/dev/ixgbe/ixgbe_common.c	(revision 338851)
-+++ sys/dev/ixgbe/ixgbe_common.c	(working copy)
-@@ -5381,3 +5381,34 @@ void ixgbe_set_soft_rate_select_speed(st
+ 		}
+diff --git a/sys/dev/ixgbe/ixgbe_common.c b/sys/dev/ixgbe/ixgbe_common.c
+index d7da9f81fbf..9ea5061a174 100644
+--- a/sys/dev/ixgbe/ixgbe_common.c
++++ b/sys/dev/ixgbe/ixgbe_common.c
+@@ -5518,3 +5518,34 @@ void ixgbe_set_soft_rate_select_speed(struct ixgbe_hw *hw,
  out:
  	return;
  }
@@ -59,11 +53,11 @@ Index: sys/dev/ixgbe/ixgbe_common.c
 +
 +	return baudrate;
 +}
-Index: sys/dev/ixgbe/ixgbe_common.h
-===================================================================
---- sys/dev/ixgbe/ixgbe_common.h	(revision 338851)
-+++ sys/dev/ixgbe/ixgbe_common.h	(working copy)
-@@ -186,4 +186,5 @@ s32 ixgbe_setup_mac_link_multispeed_fibe
+diff --git a/sys/dev/ixgbe/ixgbe_common.h b/sys/dev/ixgbe/ixgbe_common.h
+index af0db6e4c7d..d45d9f5bf63 100644
+--- a/sys/dev/ixgbe/ixgbe_common.h
++++ b/sys/dev/ixgbe/ixgbe_common.h
+@@ -193,4 +193,5 @@ s32 ixgbe_setup_mac_link_multispeed_fiber(struct ixgbe_hw *hw,
  					  bool autoneg_wait_to_complete);
  void ixgbe_set_soft_rate_select_speed(struct ixgbe_hw *hw,
  				      ixgbe_link_speed speed);

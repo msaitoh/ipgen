@@ -1,0 +1,63 @@
+diff --git a/sys/dev/ixgbe/if_ix.c b/sys/dev/ixgbe/if_ix.c
+index 581944fa6a7..1ac60dfb3c1 100644
+--- a/sys/dev/ixgbe/if_ix.c
++++ b/sys/dev/ixgbe/if_ix.c
+@@ -3550,7 +3550,8 @@ ixgbe_if_update_admin_status(if_ctx_t ctx)
+ 			/* Update DMA coalescing config */
+ 			ixgbe_config_dmac(sc);
+ 			/* should actually be negotiated value */
+-			iflib_link_state_change(ctx, LINK_STATE_UP, IF_Gbps(10));
++			iflib_link_state_change(ctx, LINK_STATE_UP,
++			    ixgbe_baudrate(sc->link_speed));
+ 
+ 			if (sc->feat_en & IXGBE_FEATURE_SRIOV)
+ 				ixgbe_ping_all_vfs(sc);
+diff --git a/sys/dev/ixgbe/ixgbe_common.c b/sys/dev/ixgbe/ixgbe_common.c
+index 0ad538a465e..f3c75792ef8 100644
+--- a/sys/dev/ixgbe/ixgbe_common.c
++++ b/sys/dev/ixgbe/ixgbe_common.c
+@@ -5693,3 +5693,34 @@ void ixgbe_set_soft_rate_select_speed(struct ixgbe_hw *hw,
+ out:
+ 	return;
+ }
++
++u64 ixgbe_baudrate(ixgbe_link_speed speed)
++{
++	uint64_t baudrate;
++
++	switch (speed) {
++	case IXGBE_LINK_SPEED_10GB_FULL:
++		baudrate = 10ULL * 1000 * 1000 * 1000;	/* IF_Gbps(10) */;
++		break;
++	case IXGBE_LINK_SPEED_5GB_FULL:
++		baudrate = 5ULL * 1000 * 1000 * 1000;	/* IF_Gbps(5) */;
++		break;
++	case IXGBE_LINK_SPEED_2_5GB_FULL:
++		baudrate = 2500ULL * 1000 * 1000;	/* IF_Mbps(2500) */;
++		break;
++	case IXGBE_LINK_SPEED_1GB_FULL:
++		baudrate = 1ULL * 1000 * 1000 * 1000;	/* IF_Gbps(1) */;
++		break;
++	case IXGBE_LINK_SPEED_100_FULL:
++		baudrate = 100ULL * 1000 * 1000;	/* IF_Mbps(100) */;
++		break;
++	case IXGBE_LINK_SPEED_10_FULL:
++		baudrate = 10ULL * 1000 * 1000;		/* IF_Mbps(10) */;
++		break;
++	case IXGBE_LINK_SPEED_UNKNOWN:
++	default:
++		baudrate = 0;
++	}
++
++	return baudrate;
++}
+diff --git a/sys/dev/ixgbe/ixgbe_common.h b/sys/dev/ixgbe/ixgbe_common.h
+index e5a186f73ea..60f630489ee 100644
+--- a/sys/dev/ixgbe/ixgbe_common.h
++++ b/sys/dev/ixgbe/ixgbe_common.h
+@@ -203,4 +203,5 @@ s32 ixgbe_setup_mac_link_multispeed_fiber(struct ixgbe_hw *hw,
+ 					  bool autoneg_wait_to_complete);
+ void ixgbe_set_soft_rate_select_speed(struct ixgbe_hw *hw,
+ 				      ixgbe_link_speed speed);
++u64 ixgbe_baudrate(ixgbe_link_speed speed);
+ #endif /* IXGBE_COMMON */
