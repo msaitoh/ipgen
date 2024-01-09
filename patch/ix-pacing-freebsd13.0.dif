@@ -75,7 +75,7 @@ index 9f3674cdab5..c0f59044be7 100644
 +		    adapter, 0,
 +		    ixgbe_sysctl_tipg, "I", "Transmit IPG register");
 +
-+	else if (hw->mac.type <= ixgbe_mac_X550EM_x)
++	else if (hw->mac.type <= ixgbe_mac_X550EM_a)
 +		SYSCTL_ADD_PROC(ctx_list, child, OID_AUTO, "pap",
 +		    CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_NEEDGIANT,
 +		    adapter, 0,

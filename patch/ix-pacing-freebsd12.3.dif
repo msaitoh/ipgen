@@ -72,7 +72,7 @@ index 581944fa6a7..7274358644d 100644
 +		    CTLTYPE_INT | CTLFLAG_RW, sc, 0,
 +			ixgbe_sysctl_tipg, "I", "Transmit IPG register");
 +
-+	else if (hw->mac.type <= ixgbe_mac_X550EM_x)
++	else if (hw->mac.type <= ixgbe_mac_X550EM_a)
 +		SYSCTL_ADD_PROC(ctx_list, child, OID_AUTO, "pap",
 +			CTLTYPE_INT | CTLFLAG_RW, sc, 0,
 +			ixgbe_sysctl_pap, "I", "Pause and Pace register");
