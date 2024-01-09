@@ -2263,7 +2263,7 @@ usage(void)
 	       "\n"
 	       "	-H <Hz>				specify control Hz (default: 1000)\n"
 	       "	-n <npkt>			sync transmit per <npkt>\n"
-	       "	--ipg				adapt IPG (Inter Packet Gap) if possible\n"
+	       "	--ipg				adapt IPG (Inter Packet Gap)\n"
 	       "	--burst				don't set IPG (default)\n"
 	       "\n"
 	       "	-S <script>			autotest script\n"
