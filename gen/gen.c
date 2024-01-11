@@ -3927,7 +3927,6 @@ main(int argc, char *argv[])
 	/* initialize instances */
 	pps = -1;
 	for (i = 0; i < 2; i++) {
-		memset(&interface[i], 0, sizeof(interface));
 		interface_init(i);
 		pbufq_init(&interface[i].pbufq);
 		interface[i].pktsize = min_pktsize;
