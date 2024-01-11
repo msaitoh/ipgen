@@ -331,6 +331,7 @@ seqcheck_receive(struct sequencechecker *sc, uint32_t seq)
 	if (sc->sc_bitmap_start > seq64) {
 		/* (A) Out of range */
 		sc->sc_outofrange++;
+		/* XXX sc_outofrange should be printed */
 		if (sc->sc_parent) {
 			sc->sc_parent->sc_outofrange++;
 		} else {
