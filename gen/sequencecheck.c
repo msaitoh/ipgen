@@ -250,6 +250,7 @@ seqcheck_receive(struct sequencechecker *sc, uint32_t seq)
 	if (sc->sc_bitmap_start > seq64) {
 		/* (A) Out of range */
 		sc->sc_outofrange++;
+		/* XXX sc_outofrange should be printed */
 		if (sc->sc_parent)
 			sc->sc_parent->sc_outofrange++;
 		return 0;
@@ -297,8 +298,18 @@ seqcheck_receive(struct sequencechecker *sc, uint32_t seq)
 		if (sc->sc_parent)
 			sc->sc_parent->sc_dropshift += BIT_PER_DATA * n;
 
+		if (sc->sc_bitmap_end == 0)
+			DEBUGLOG("seqcheck_receive: sc_bitmap_end == 0!!!\n");
+		SEQCHECK(sc, "TEST3");
+#ifdef DEBUG
+		save = sc->sc_bitmap_end;
+#endif
 		sc->sc_bitmap_end =
 		    (seq64 + BIT_PER_DATA) & ~(BIT_PER_DATA - 1);
+#ifdef DEBUG
+		if (sc->sc_bitmap_end == 0)
+			DEBUGLOG("seqcheck_receive: save = %"PRIu64", seq64=%"PRIu64"\n", save, seq64);
+#endif
 		sc->sc_bitmap_start = sc->sc_bitmap_end - SEQ_MAXBIT;
 	}
 

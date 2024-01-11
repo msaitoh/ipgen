@@ -112,6 +112,8 @@
 #define pthread_setname_np	pthread_set_name_np
 #endif
 
+#define DEBUG 1
+
 #ifdef DEBUG
 FILE *debugfh;
 #endif
@@ -1770,6 +1772,7 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 
 		flowid = seqrecord->flowid;
 		seqflow = seqrecord->flowseq;
+		DEBUGLOG("rxpkt: flowid = %u, max = %u, seqflow = %"PRIu64"\n", flowid, get_flowid_max(ifno), seqflow);
 		if (get_flowid_max(ifno) >= flowid)
 			nskip = seqcheck_receive(iface->seqchecker_perflow[flowid], seqflow);
 
@@ -3061,11 +3064,12 @@ rfc2544_test(void)
 
 			/* (A) Got packets and high error rate. Down PPS. */
 			do_down_pps = 1;
-			DEBUGLOG("RFC2544: pktsize=%d, pps=%d (%.2fMbps), rx=%"PRIu64", drop=%"PRIu64", drop-rate=%.3f\n",
+			DEBUGLOG("RFC2544: pktsize=%d, pps=%d (%.2fMbps), rx=%"PRIu64", drop=%"PRIu64"(%"PRIx64"), drop-rate=%.3f\n",
 			    work->pktsize,
 			    work->curpps,
 			    calc_mbps(work->pktsize, work->curpps),
 			    interface[0].stats.rx,
+			    interface[0].stats.rx_seqdrop,
 			    interface[0].stats.rx_seqdrop,
 			    interface[0].stats.rx_seqdrop * 100.0 / interface[0].stats.rx);
 			DEBUGLOG("RFC2544: down pps\n");
@@ -4128,7 +4132,7 @@ main(int argc, char *argv[])
 			break;
 
 		case 'n':
-			opt_npkt_sync = strtol(optarg, (char **)NULL, 10);
+			opt_npkt_sync = strtoul(optarg, (char **)NULL, 10);
 			break;
 
 		case 'H':
