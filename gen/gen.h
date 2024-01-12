@@ -99,6 +99,7 @@ int statistics_clear(void);
 
 extern struct timespec currenttime;
 
+#define DEBUG 1
 #ifdef DEBUG
 extern FILE *debugfh;
 #define DEBUGOPEN(file)							\

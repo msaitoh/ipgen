@@ -50,7 +50,11 @@ struct sequencechecker {
 
 	uint64_t sc_bitmap_start;
 	uint64_t sc_bitmap_end;
-	int sc_bitmap_baseidx;	/* sc_bitmap[sc_bitmap_base] = sc_bitmap_start */
+	int sc_bitmap_baseidx;	/*
+				 * sc_bitmap[sc_bitmap_baseidx] bit 0's
+				 * sequence number is sc_bitmap_start.
+				 */
+
 	int sc_needinit;
 #define SEQ_ARRAYSIZE		64	/* must be 2^n */
 #define BIT_PER_DATA		(sizeof(uint64_t) * 8)
@@ -61,7 +65,7 @@ struct sequencechecker {
 	uint64_t sc_maxseq;	/* The max sequence number. */
 
 	/* Statistics */
-	uint64_t sc_nreceive;
+	uint64_t sc_nreceive;	/* XXX Not used? */
 	uint64_t sc_reorder;
 	uint64_t sc_duplicate;
 	uint64_t sc_outofrange;
@@ -69,6 +73,18 @@ struct sequencechecker {
 };
 #define SEQ_NEXT_INDEX(i)	(((i) + 1) & (SEQ_ARRAYSIZE - 1))
 
+#define SEQCHECK(sc, str)						\
+do {									\
+	if ((sc->sc_bitmap_start % BIT_PER_DATA) != 0)				\
+		DEBUGLOG("CHECK: %s Wrong sc_bitmap_start = %"PRIu64"\n", \
+		    str, sc->sc_bitmap_start);				\
+	if ((sc->sc_bitmap_start % BIT_PER_DATA) != 0)				\
+		DEBUGLOG("CHECK: %s Wrong sc_bitmap_end = %"PRIu64"\n", \
+		    str, sc->sc_bitmap_end);				\
+	if ((sc->sc_bitmap_baseidx < 0) || (sc->sc_bitmap_baseidx >= SEQ_ARRAYSIZE))	\
+	    DEBUGLOG("CHECK: %s Wrong sc_bitmap_baseidx = %d\n",	\
+		    str, sc->sc_bitmap_baseidx);			\
+} while(0)
 
 static inline int
 uint64bitcount(uint64_t x)
@@ -109,37 +125,96 @@ uint64bitcount(uint64_t x)
 static void
 seqcheck_init(struct sequencechecker *sc)
 {
+	DEBUGLOG("%s: called\n", __func__);
 	memset(sc, 0, sizeof(*sc));
 	sc->sc_bitmap_start = 0;
 	sc->sc_bitmap_end = sc->sc_bitmap_start + SEQ_MAXBIT;
 	sc->sc_maxseq = 0;
 	sc->sc_needinit = 1;
+	SEQCHECK(sc, "in seqcheck_init");
 }
 
+#if 0
 void
 seqcheck_clear(struct sequencechecker *sc)
 {
 	struct sequencechecker *parent;
 	parent = sc->sc_parent;	/* save */
 
+	DEBUGLOG("%s: called\n", __func__);
 	seqcheck_init(sc);
 
 	sc->sc_parent = parent;	/* restore */
 }
+#else
+/*
+ * Mark sc_bitmap up to sc_maxseq and clear statistics.
+ */
+void
+seqcheck_clear(struct sequencechecker *sc)
+{
+	struct sequencechecker *parent;
+	u_int idx, i, n;
+	uint64_t seqhead;
+
+	parent = sc->sc_parent;	/* save */
+
+//	DEBUGLOG("%s: called\n", __func__);
+
+
+	/* Calculate number of bitmap array to be modified. */
+	n = ((sc->sc_maxseq - sc->sc_bitmap_start) + BIT_PER_DATA) / BIT_PER_DATA;
+//	printf("XXX n       = %u\n", n);
+
+	idx = sc->sc_bitmap_baseidx;
+	seqhead = sc->sc_bitmap_start;
+//	printf("XXX idx     = %u\n", n);
+//	printf("XXX seqhead = %"PRIu64"\n", seqhead);
+	/* Mark */
+	for (i = 0; i < n; i++) {
+		if ((sc->sc_maxseq - seqhead) >= BIT_PER_DATA) {
+			sc->sc_bitmap[idx] = ~0; /* Mark all bits */
+//			printf("XXX %2d: mark all of sc_bitmap[%u]\n", i, idx);
+		} else {
+#if 0
+			printf("XXX %2d: partial sc_bitmap[%u], seqhead = %"PRIu64", maxsed = %"PRIu64"\n",
+			    i, idx, sc->sc_maxseq, seqhead);
+#endif
+			for (u_int j = 0; j < (sc->sc_maxseq - seqhead); j++) {
+//				printf("%2d: Set bit %u (%"PRIx64")\n", j, j, 1UL << j);
+				sc->sc_bitmap[idx] |= 1UL << j;
+			}
+		}
+		idx = SEQ_NEXT_INDEX(idx);
+		seqhead += BIT_PER_DATA;
+	}
+
+	/* Clear statistics. */
+	sc->sc_nreceive = 0;
+	sc->sc_reorder = 0;
+	sc->sc_duplicate = 0;
+	sc->sc_outofrange = 0;
+	sc->sc_dropshift = 0;
+
+	sc->sc_parent = parent;	/* restore */
+}
+#endif
 
 static void
 seqcheck_init2(struct sequencechecker *sc, uint64_t seq64)
 {
 	struct sequencechecker *parent;
 
+	DEBUGLOG("%s: called\n", __func__);
 	parent = sc->sc_parent;	/* save */
 
 	memset(sc, 0, sizeof(*sc));
-	sc->sc_bitmap_start = seq64;
+	sc->sc_bitmap_start = seq64 & ~(BIT_PER_DATA - 1); /* XXX correct? */
 	sc->sc_bitmap_end = sc->sc_bitmap_start + SEQ_MAXBIT;
 	sc->sc_maxseq = seq64;
 
 	sc->sc_parent = parent;	/* restore */
+	SEQCHECK(sc, "in seqcheck_init2");
 }
 
 struct sequencechecker *
@@ -221,6 +296,7 @@ seqcheck_receive(struct sequencechecker *sc, uint32_t seq)
 	}
 
 	if (sc->sc_needinit) {
+		DEBUGLOG("seqcheck_receive: XXX goto init2(%p)\n", sc);
 		seqcheck_init2(sc, seq64);
 		sc->sc_needinit = 0;
 	}
@@ -240,6 +316,10 @@ seqcheck_receive(struct sequencechecker *sc, uint32_t seq)
 	 * ---------------|--------------------|-----|----------->
 	 *                bitmap_start      maxseq    bitmap_end
 	 */
+#if 0
+	if ((seq % 20000000) == 0)
+		DEBUGLOG("s=%u,s64=%"PRIu64",st=%"PRIu64",ed=%"PRIu64"\n", seq, seq64, sc->sc_bitmap_start, sc->sc_bitmap_end);
+#endif
 
 	if (sc->sc_maxseq < seq64) {
 		nskip = seq64 - sc->sc_maxseq;	/* Number of advanced seq */
@@ -250,9 +330,15 @@ seqcheck_receive(struct sequencechecker *sc, uint32_t seq)
 	if (sc->sc_bitmap_start > seq64) {
 		/* (A) Out of range */
 		sc->sc_outofrange++;
-		/* XXX sc_outofrange should be printed */
-		if (sc->sc_parent)
+		if (sc->sc_parent) {
 			sc->sc_parent->sc_outofrange++;
+		} else {
+			/* XXX sc_outofrange should be printed */
+#if 0
+			DEBUGLOG("XXX OUT_OF_RANGE! st=%"PRIu64",s=%u,s64=%"PRIu64",ed=%"PRIu64"\n",
+			    sc->sc_bitmap_start, seq, seq64, sc->sc_bitmap_end);
+#endif
+		}
 		return 0;
 	}
 	if (sc->sc_bitmap_end > seq64) {
@@ -273,27 +359,71 @@ seqcheck_receive(struct sequencechecker *sc, uint32_t seq)
 		 */
 		n = SEQ_ARRAYSIZE;
 	}
+#if 0
+	if (n > 1)
+		DEBUGLOG("seqcheck_receive: seq64=%"PRIu64", bitmap_end=%"PRIu64", n=%"PRIu64"\n",
+		    seq64, sc->sc_bitmap_end, n);
+#endif
 
 	/* The drop count is calculated when an bitmap becomes out of range. */
 	for (i = 0; i < n; i++) {
 		ndrop = BIT_PER_DATA - uint64bitcount(sc->sc_bitmap[sc->sc_bitmap_baseidx]);
+#if 0
 		sc->sc_dropshift += ndrop;
+#else
+		if (ndrop != 0) {
+#if 0
+			DEBUGLOG("seqcheck_receive: i=%"PRIu64", bitmap[%u]=%8lx\n",
+			    i, sc->sc_bitmap_baseidx, sc->sc_bitmap[sc->sc_bitmap_baseidx]);
+			DEBUGLOG("seqcheck_receive: i=%"PRIu64", ndrop=%"PRIu64", dropshift %"PRIu64" -> %"PRIu64"\n", i, ndrop,
+			    sc->sc_dropshift, sc->sc_dropshift + ndrop);
+#endif
+			sc->sc_dropshift += ndrop;
+		}
+#endif
+#if 0	
 		if (sc->sc_parent)
 			sc->sc_parent->sc_dropshift += ndrop;
+#else
+		if (sc->sc_parent) {
+#if 0
+			if (ndrop != 0)
+				DEBUGLOG("seqcheck_receive: i=%"PRIu64", ndrop=%"PRIu64", dropshift %"PRIu64" -> %"PRIu64" (parent)\n",
+				    i, ndrop, sc->sc_parent->sc_dropshift, sc->sc_parent->sc_dropshift + ndrop);
+#endif
+			sc->sc_parent->sc_dropshift += ndrop;
+		}
+#endif
 
 		sc->sc_bitmap[sc->sc_bitmap_baseidx] = 0;
 
 		/* shift bitmap */
+		SEQCHECK(sc, "TEST1");
+		if (((sc->sc_bitmap_start % 64) != 0) || (sc->sc_bitmap_end == 0))
+			DEBUGLOG("seqcheck_receive:  (pre) Wrong start or end. s64=%"PRIu64", i=%"PRIu64", bitmap_start=%"PRIu64", bitmap_end=%"PRIu64", baseidx=%d\n",
+			    seq64, i, sc->sc_bitmap_start, sc->sc_bitmap_end, sc->sc_bitmap_baseidx);
+
 		sc->sc_bitmap_baseidx = SEQ_NEXT_INDEX(sc->sc_bitmap_baseidx);
 		sc->sc_bitmap_start += BIT_PER_DATA;
 		sc->sc_bitmap_end += BIT_PER_DATA;
+		SEQCHECK(sc, "TEST2");
+		if (((sc->sc_bitmap_start % 64) != 0) || (sc->sc_bitmap_end == 0))
+			DEBUGLOG("seqcheck_receive: (post) Wrong start or end. s64=%"PRIu64", i=%"PRIu64", bitmap_start=%"PRIu64", bitmap_end=%"PRIu64", baseidx=%d\n",
+			    seq64, i, sc->sc_bitmap_start, sc->sc_bitmap_end, sc->sc_bitmap_baseidx);
+		
 	}
 
 	/* The sequence advanced more than whole bitmap entries. */
 	if (n >= SEQ_ARRAYSIZE) {
+#ifdef DEBUG
+		uint64_t save;
+#endif
+		
 		/* Re-calculate remains after finishing the above for loop. */
 		n = ((seq64 - sc->sc_bitmap_end) + BIT_PER_DATA) / BIT_PER_DATA;
 
+		DEBUGLOG("seqcheck_receive: n=%"PRIu64", seq64=%"PRIu64", bitmap_end=%"PRIu64", BPD*n=%"PRIu64"\n", n,
+		    seq64, sc->sc_bitmap_end, BIT_PER_DATA * n);
 		sc->sc_dropshift += BIT_PER_DATA * n;
 		if (sc->sc_parent)
 			sc->sc_parent->sc_dropshift += BIT_PER_DATA * n;
@@ -311,6 +441,7 @@ seqcheck_receive(struct sequencechecker *sc, uint32_t seq)
 			DEBUGLOG("seqcheck_receive: save = %"PRIu64", seq64=%"PRIu64"\n", save, seq64);
 #endif
 		sc->sc_bitmap_start = sc->sc_bitmap_end - SEQ_MAXBIT;
+		SEQCHECK(sc, "TEST3 post");
 	}
 
 	seqcheck_bit_set(sc, seq64 - sc->sc_bitmap_start);

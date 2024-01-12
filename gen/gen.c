@@ -1772,7 +1772,7 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 
 		flowid = seqrecord->flowid;
 		seqflow = seqrecord->flowseq;
-		DEBUGLOG("rxpkt: flowid = %u, max = %u, seqflow = %"PRIu64"\n", flowid, get_flowid_max(ifno), seqflow);
+//		DEBUGLOG("rxpkt: flowid = %u, max = %u, seqflow = %"PRIu64"\n", flowid, get_flowid_max(ifno), seqflow);
 		if (get_flowid_max(ifno) >= flowid)
 			nskip = seqcheck_receive(iface->seqchecker_perflow[flowid], seqflow);
 

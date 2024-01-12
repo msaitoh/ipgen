@@ -28,6 +28,7 @@ static void seqcheck_testinit(const char *, struct sequencechecker *);
 
 static int test0(void);
 static int test1(void);
+static int test1b(void);
 static int test2(void);
 static int test3(void);
 static int test4(void);
@@ -74,6 +75,36 @@ test1(void)
 	 * The total drop count must be 63.
 	 */
 
+	seqcheck_dump(&seqmap);
+
+	return 0;
+}
+
+static int
+test1b(void)
+{
+	struct sequencechecker seqmap;
+
+	seqcheck_init(&seqmap);
+
+	seqcheck_receive(&seqmap, 0);
+	seqcheck_dump(&seqmap);
+	seqcheck_receive(&seqmap, 31);
+	seqcheck_dump(&seqmap);
+	seqcheck_receive(&seqmap, 64);
+	seqcheck_dump(&seqmap);
+	seqcheck_receive(&seqmap, 4097);
+	seqcheck_dump(&seqmap);
+	seqcheck_receive(&seqmap, 4097+4096);
+	seqcheck_dump(&seqmap);
+	printf("XXX clear\n");
+	seqcheck_clear(&seqmap);
+	seqcheck_dump(&seqmap);
+	printf("XXX jump 100\n");
+	seqcheck_receive(&seqmap, 4097+4096+100);
+	seqcheck_dump(&seqmap);
+	printf("XXX clear2\n");
+	seqcheck_clear(&seqmap);
 	seqcheck_dump(&seqmap);
 
 	return 0;
@@ -199,6 +230,7 @@ struct testtab {
 } tests[] = {
 	{ test0 },
 	{ test1 },
+	{ test1b },
 	{ test2 },
 	{ test3 },
 	{ test4 },
