@@ -110,7 +110,12 @@
 #undef DEBUG
 #ifdef DEBUG
 FILE *debugfh;
-#define DEBUGOPEN(file)		do { debugfh = fopen(file, "w"); } while (0)
+#define DEBUGOPEN(file)							\
+	do {								\
+		debugfh = fopen(file, "w");				\
+		if (debugfh == NULL)					\
+			err(2, "Failed to open %s", file);		\
+	} while (0)
 #define DEBUGLOG(fmt, args...)	do { fprintf(debugfh, fmt, ## args); fflush(debugfh); } while (0)
 #define DEBUGCLOSE()		fclose(debugfh)
 #else
