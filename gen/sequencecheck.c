@@ -263,7 +263,8 @@ seqcheck_receive(struct sequencechecker *sc, uint32_t seq)
 		if (sc->sc_parent)
 			sc->sc_parent->sc_dropshift += BIT_PER_DATA * n;
 
-		sc->sc_bitmap_end = (seq64 + BIT_PER_DATA) & -BIT_PER_DATA;
+		sc->sc_bitmap_end =
+		    (seq64 + BIT_PER_DATA) & ~(BIT_PER_DATA - 1);
 		sc->sc_bitmap_start = sc->sc_bitmap_end - SEQ_MAXBIT;
 	}
 
