@@ -107,21 +107,8 @@
 #define	PORT_DEFAULT		9	/* discard port */
 #define MAXFLOWNUM		(1024 * 1024)
 
-#undef DEBUG
 #ifdef DEBUG
 FILE *debugfh;
-#define DEBUGOPEN(file)							\
-	do {								\
-		debugfh = fopen(file, "w");				\
-		if (debugfh == NULL)					\
-			err(2, "Failed to open %s", file);		\
-	} while (0)
-#define DEBUGLOG(fmt, args...)	do { fprintf(debugfh, fmt, ## args); fflush(debugfh); } while (0)
-#define DEBUGCLOSE()		fclose(debugfh)
-#else
-#define DEBUGOPEN(file)		((void)0)
-#define DEBUGLOG(args...)	((void)0)
-#define DEBUGCLOSE()		((void)0)
 #endif
 
 #define printf_verbose(fmt, args...)	do { if (verbose > 0) printf(fmt, ## args);} while (0)
