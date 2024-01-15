@@ -39,5 +39,6 @@ uint64_t seqcheck_receive(struct sequencechecker *, uint32_t);
 uint64_t seqcheck_dropcount(struct sequencechecker *);
 uint64_t seqcheck_dupcount(struct sequencechecker *);
 uint64_t seqcheck_reordercount(struct sequencechecker *);
+uint64_t seqcheck_outofrangecount(struct sequencechecker *);
 
 #endif /* _SEQUENCECHECK_H_ */

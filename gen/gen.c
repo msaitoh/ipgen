@@ -286,6 +286,11 @@ struct interface {
 		uint64_t rx_reorder;
 		uint64_t rx_reorder_last;
 		uint64_t rx_reorder_delta;
+		uint64_t rx_outofrange;
+		uint64_t rx_outofrange_last;
+		uint64_t rx_outofrange_delta;
+
+
 		uint64_t rx_seqdrop_flow;
 		uint64_t rx_seqdrop_flow_last;
 		uint64_t rx_seqdrop_flow_delta;
@@ -295,6 +300,10 @@ struct interface {
 		uint64_t rx_reorder_flow;
 		uint64_t rx_reorder_flow_last;
 		uint64_t rx_reorder_flow_delta;
+		/*
+		 * rx_outofrange is proveided only for per-interface
+		 * because per-flow is not important.
+		 */
 
 		uint64_t tx_byte;
 		uint64_t rx_byte;
@@ -1946,6 +1955,7 @@ interface_statistics_json(int ifno, char *buf, int buflen)
 	    "\"RXdropps\":%"PRIu64","
 	    "\"RXdup\":%"PRIu64","
 	    "\"RXreorder\":%"PRIu64","
+	    "\"RXoutofrange\":%"PRIu64","
 
 	    "\"RXdrop-perflow\":%"PRIu64","
 	    "\"RXdup-perflow\":%"PRIu64","
@@ -1983,6 +1993,7 @@ interface_statistics_json(int ifno, char *buf, int buflen)
 	    ifstats->rx_seqdrop_delta,
 	    ifstats->rx_dup,
 	    ifstats->rx_reorder,
+	    ifstats->rx_outofrange,
 
 	    ifstats->rx_seqdrop_flow,
 	    ifstats->rx_dup_flow,
@@ -2087,6 +2098,8 @@ sighandler_alrm(int signo)
 			    seqcheck_dupcount(iface->seqchecker);
 			ifstats->rx_reorder =
 			    seqcheck_reordercount(iface->seqchecker);
+			ifstats->rx_outofrange =
+			    seqcheck_outofrangecount(iface->seqchecker);
 
 			ifstats->rx_seqdrop_flow =
 			    seqcheck_dropcount(iface->seqchecker_flowtotal);
@@ -2133,6 +2146,8 @@ sighandler_alrm(int signo)
 			ifstats->rx_dup_last = ifstats->rx_dup;
 			ifstats->rx_reorder_delta = ifstats->rx_reorder - ifstats->rx_reorder_last;
 			ifstats->rx_reorder_last = ifstats->rx_reorder;
+			ifstats->rx_outofrange_delta = ifstats->rx_outofrange - ifstats->rx_outofrange_last;
+			ifstats->rx_outofrange_last = ifstats->rx_outofrange;
 
 			ifstats->rx_seqdrop_flow_delta = ifstats->rx_seqdrop_flow - ifstats->rx_seqdrop_flow_last;
 			ifstats->rx_seqdrop_flow_last = ifstats->rx_seqdrop_flow;
@@ -3348,6 +3363,8 @@ control_init_items(struct itemlist *itemlist)
 	REG(IF1_RX_REORDER, NULL, &ifstats1->rx_reorder);
 	REG(IF0_RX_REORDER_FLOW, NULL, &ifstats0->rx_reorder_flow);
 	REG(IF1_RX_REORDER_FLOW, NULL, &ifstats1->rx_reorder_flow);
+	REG(IF0_RX_OUTOFRANGE, NULL, &ifstats0->rx_outofrange);
+	REG(IF1_RX_OUTOFRANGE, NULL, &ifstats1->rx_outofrange);
 	REG(IF0_RX_FLOW, NULL, &ifstats0->rx_flow);
 	REG(IF1_RX_FLOW, NULL, &ifstats1->rx_flow);
 	REG(IF0_RX_ARP, NULL, &ifstats0->rx_arp);
