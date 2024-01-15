@@ -97,4 +97,20 @@ int statistics_clear(void);
 
 extern struct timespec currenttime;
 
+#ifdef DEBUG
+extern FILE *debugfh;
+#define DEBUGOPEN(file)							\
+	do {								\
+		debugfh = fopen(file, "w");				\
+		if (debugfh == NULL)					\
+			err(2, "Failed to open %s", file);		\
+	} while (0)
+#define DEBUGLOG(fmt, args...)	do { fprintf(debugfh, fmt, ## args); fflush(debugfh); } while (0)
+#define DEBUGCLOSE()		fclose(debugfh)
+#else
+#define DEBUGOPEN(file)		((void)0)
+#define DEBUGLOG(args...)	((void)0)
+#define DEBUGCLOSE()		((void)0)
+#endif
+
 #endif /* _GEN_H_ */
