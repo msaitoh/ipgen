@@ -360,7 +360,7 @@ seqcheck_dump(struct sequencechecker *sc)
 	printf("\n");
 }
 
-#if 0	/* TEST */
+#ifdef TEST
 int
 main(int argc, char *argv[])
 {
@@ -392,7 +392,7 @@ main(int argc, char *argv[])
 		seqcheck_dump(&seqmap);
 	}
 
-	exit(1);
+	exit(0);
 
 	seqcheck_receive(&seqmap, 16388);
 	seqcheck_receive(&seqmap, 16387);
