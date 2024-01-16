@@ -32,7 +32,7 @@ pktgen_item.c: pktgen.layout
 depend: pktgen_item.c $(SRCS)
 	mkdep $(CFLAGS) $(SRCS)
 
-clean:
+clean: clean_test
 	rm -f pktgen_item.[ch]
 	rm -f $(PROG) $(OBJS)
 
@@ -41,5 +41,17 @@ cleandir: clean
 
 install:
 	install -o root -g wheel -m 550 ipgen ${PREFIX}/bin/
+
+sequencecheck:
+	$(CC) -o $@ sequencecheck.c $(CFLAGS) -DTEST
+
+test_sequencecheck: sequencecheck
+	./sequencecheck > sequencecheck.test.out
+	diff -q sequencecheck.test.out sequencecheck.test.valid.out
+
+test: test_sequencecheck
+
+clean_test:
+	rm -f sequencecheck sequencecheck.test.out
 
 -include .depend
