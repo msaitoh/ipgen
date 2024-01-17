@@ -28,10 +28,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <inttypes.h>
+#include "gen.h"
 #include "sequencecheck.h"
 
 #if defined(__FreeBSD__) && defined(__x86_64__)
 #include <machine/cpufunc.h>
+#endif
+
+#if defined(DEBUG) && defined(TEST)
+#undef DEBUGLOG
+#define DEBUGLOG(fmt, args...)	printf(fmt, ## args)
 #endif
 
 struct sequencechecker {
