@@ -2952,7 +2952,7 @@ rfc2544_test(unsigned int n)
 		statistics_clear();
 		transmit_set(1, 1);
 
-		state = opt_rfc2544_warming_duration > 0 ? RFC2544_WARMING0 : RFC2544_MEASURING0;
+		state = RFC2544_WARMING0;
 		break;
 
 	case RFC2544_INTERVAL0:
