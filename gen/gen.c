@@ -2959,7 +2959,6 @@ rfc2544_test(unsigned int n)
 		transmit_set(1, 0);
 		statistics_clear();
 		memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
-		statetime.tv_sec += 1;	/* wait 2sec */
 		statetime.tv_sec += opt_rfc2544_interval;
 		logging("interval: wait %d sec.", opt_rfc2544_interval);
 
