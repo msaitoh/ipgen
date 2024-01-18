@@ -16,6 +16,7 @@
     RX-icmp: ################### pkt    RX-icmp: ################# pkt    	id=if0_rx_icmp,U64		id=if1_rx_icmp,U64
     RX-other: ################## pkt    RX-other: ################ pkt    	id=if0_rx_other,U64		id=if1_rx_other,U64
     RX-expired: ################ pkt    RX-expired: ############## pkt    	id=if0_rx_expire,U64		id=if1_rx_expire,U64
+    RX-outofrange: ############# pkt    RX-outofrange: ########### pkt    	id=if0_rx_outofrange,U64	id=if1_rx_outofrange,U64
                                                                           
   Delta:         TX: ########### pps               TX: ########### pps    	id=if0_tx_delta,U64		id=if1_tx_delta,U64
                  TX: ########### bytes/s           TX: ########### bytes/s	id=if0_tx_byte_delta,U64	id=if1_tx_byte_delta,U64

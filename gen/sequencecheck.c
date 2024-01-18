@@ -318,6 +318,12 @@ seqcheck_dropcount(struct sequencechecker *sc)
 #endif
 }
 
+uint64_t
+seqcheck_outofrangecount(struct sequencechecker *sc)
+{
+	return sc->sc_outofrange;
+}
+
 void
 seqcheck_dump2(struct sequencechecker *sc)
 {
