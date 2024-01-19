@@ -316,6 +316,7 @@ seqcheck_receive(struct sequencechecker *sc, uint32_t seq)
 	 * ---------------|--------------------|-----|----------->
 	 *                bitmap_start      maxseq    bitmap_end
 	 */
+
 #if 0
 	if ((seq % 20000000) == 0)
 		DEBUGLOG("s=%u,s64=%"PRIu64",st=%"PRIu64",ed=%"PRIu64"\n", seq, seq64, sc->sc_bitmap_start, sc->sc_bitmap_end);
