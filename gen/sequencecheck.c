@@ -55,7 +55,9 @@ struct sequencechecker {
 	uint64_t sc_bitmap[SEQ_ARRAYSIZE];
 
 	struct sequencechecker *sc_parent;
-	uint64_t sc_maxseq;
+	uint64_t sc_maxseq;	/* The max sequence number. */
+
+	/* Statistics */
 	uint64_t sc_nreceive;
 	uint64_t sc_reorder;
 	uint64_t sc_duplicate;
@@ -226,29 +228,48 @@ seqcheck_receive(struct sequencechecker *sc, uint32_t seq)
 	}
 	sc->sc_lastseq = seq;
 
+	/*
+	 * seq64 --------><-------------------------><-----------
+	 *         (A)                (B)                 (C)
+	 *     outofrange
+	 *
+	 * ---------------|--------------------|-----|----------->
+	 *                bitmap_start      maxseq    bitmap_end
+	 */
 
 	if (sc->sc_maxseq < seq64) {
-		nskip = seq64 - sc->sc_maxseq;
-		sc->sc_maxseq = seq64;
+		nskip = seq64 - sc->sc_maxseq;	/* Number of advanced seq */
+		sc->sc_maxseq = seq64;		/* Update maxseq */
 	} else
-		nskip = 0;
+		nskip = 0;			/* Not advanced */
 
 	if (sc->sc_bitmap_start > seq64) {
+		/* (A) Out of range */
 		sc->sc_outofrange++;
 		if (sc->sc_parent)
 			sc->sc_parent->sc_outofrange++;
 		return 0;
 	}
 	if (sc->sc_bitmap_end > seq64) {
+		/*
+		 * (B) Set the bit corresponding to that sequence number.
+		 * The duplicate check is also done in this function.
+		 */
 		seqcheck_bit_set(sc, seq64 - sc->sc_bitmap_start);
 		return nskip;
 	}
 
-	/* bitmap shift */
+	/* (C) The bitmap array is shifted to set new sequence. */
 	n = ((seq64 - sc->sc_bitmap_end) + BIT_PER_DATA) / BIT_PER_DATA;
-	if (n > SEQ_ARRAYSIZE)
+	if (n > SEQ_ARRAYSIZE) {
+		/*
+		 * Limit for the next for-loop. The remain will be resolved
+		 * later.
+		 */
 		n = SEQ_ARRAYSIZE;
+	}
 
+	/* The drop count is calculated when an bitmap becomes out of range. */
 	for (i = 0; i < n; i++) {
 		ndrop = BIT_PER_DATA - uint64bitcount(sc->sc_bitmap[sc->sc_bitmap_baseidx]);
 		sc->sc_dropshift += ndrop;
@@ -263,7 +284,9 @@ seqcheck_receive(struct sequencechecker *sc, uint32_t seq)
 		sc->sc_bitmap_end += BIT_PER_DATA;
 	}
 
+	/* The sequence advanced more than whole bitmap entries. */
 	if (n >= SEQ_ARRAYSIZE) {
+		/* Re-calculate remains after finishing the above for loop. */
 		n = ((seq64 - sc->sc_bitmap_end) + BIT_PER_DATA) / BIT_PER_DATA;
 
 		sc->sc_dropshift += BIT_PER_DATA * n;
