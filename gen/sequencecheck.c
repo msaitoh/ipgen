@@ -316,6 +316,7 @@ seqcheck_receive(struct sequencechecker *sc, uint32_t seq)
 	 * ---------------|--------------------|-----|----------->
 	 *                bitmap_start      maxseq    bitmap_end
 	 */
+
 #if 0
 	if ((seq % 20000000) == 0)
 		DEBUGLOG("s=%u,s64=%"PRIu64",st=%"PRIu64",ed=%"PRIu64"\n", seq, seq64, sc->sc_bitmap_start, sc->sc_bitmap_end);
@@ -333,7 +334,6 @@ seqcheck_receive(struct sequencechecker *sc, uint32_t seq)
 		if (sc->sc_parent) {
 			sc->sc_parent->sc_outofrange++;
 		} else {
-			/* XXX sc_outofrange should be printed */
 #if 0
 			DEBUGLOG("XXX OUT_OF_RANGE! st=%"PRIu64",s=%u,s64=%"PRIu64",ed=%"PRIu64"\n",
 			    sc->sc_bitmap_start, seq, seq64, sc->sc_bitmap_end);
@@ -359,6 +359,7 @@ seqcheck_receive(struct sequencechecker *sc, uint32_t seq)
 		 */
 		n = SEQ_ARRAYSIZE;
 	}
+
 #if 0
 	if (n > 1)
 		DEBUGLOG("seqcheck_receive: seq64=%"PRIu64", bitmap_end=%"PRIu64", n=%"PRIu64"\n",
@@ -381,7 +382,7 @@ seqcheck_receive(struct sequencechecker *sc, uint32_t seq)
 			sc->sc_dropshift += ndrop;
 		}
 #endif
-#if 0	
+#if 0
 		if (sc->sc_parent)
 			sc->sc_parent->sc_dropshift += ndrop;
 #else
