@@ -2398,10 +2398,13 @@ tx_thread_main(void *arg)
 		if (iface->need_reset_statistics) {
 			iface->need_reset_statistics = 0;
 			memset(&iface->stats, 0, sizeof(iface->stats));
+			DEBUGLOG("clear seqcheck(if%d)\n", ifno);
 			seqcheck_clear(iface->seqchecker);
+//			DEBUGLOG("clear seqcheck(flowtotal)\n");
 			seqcheck_clear(iface->seqchecker_flowtotal);
 			j = get_flownum(ifno);
 			for (i = 0; i < j; i++) {
+//				DEBUGLOG("clear seqcheck(perflow)\n");
 				seqcheck_clear(iface->seqchecker_perflow[i]);
 			}
 		}
