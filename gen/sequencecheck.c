@@ -128,16 +128,16 @@ seqcheck_clear(struct sequencechecker *sc)
 }
 
 static void
-seqcheck_init2(struct sequencechecker *sc, uint64_t seq)
+seqcheck_init2(struct sequencechecker *sc, uint64_t seq64)
 {
 	struct sequencechecker *parent;
 
 	parent = sc->sc_parent;	/* save */
 
 	memset(sc, 0, sizeof(*sc));
-	sc->sc_bitmap_start = seq;
+	sc->sc_bitmap_start = seq64;
 	sc->sc_bitmap_end = sc->sc_bitmap_start + SEQ_MAXBIT;
-	sc->sc_maxseq = seq;
+	sc->sc_maxseq = seq64;
 
 	sc->sc_parent = parent;	/* restore */
 }
