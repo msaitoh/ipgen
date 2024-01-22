@@ -28,7 +28,9 @@
 
 struct sequencechecker;
 
-struct sequencechecker *seqcheck_new(void);
+#define SCNAME_MAX	32
+
+struct sequencechecker *seqcheck_new(char *);
 void seqcheck_setparent(struct sequencechecker *, struct sequencechecker *);
 void seqcheck_clear(struct sequencechecker *);
 void seqcheck_delete(struct sequencechecker *);
