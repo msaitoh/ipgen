@@ -2209,7 +2209,14 @@ quit(int fromsig)
 	printf("Exiting...\n");
 	fflush(stdout);
 
-
+	if (!opt_txonly) {
+		pthread_join(txthread0, NULL);
+		pthread_join(rxthread0, NULL);
+	}
+	if (!opt_rxonly) {
+		pthread_join(txthread1, NULL);
+		pthread_join(rxthread1, NULL);
+	}
 	interface_close(0);
 	interface_close(1);
 
