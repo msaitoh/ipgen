@@ -654,6 +654,8 @@ touchup_tx_packet(char *buf, int ifno)
 		seqdata.seq = seqrecord->seq;
 		seqrecord->flowid = flowid;
 		seqrecord->flowseq = iface->sequence_tx_perflow[flowid]++;
+		DEBUGLOG("%s: seq=%u, flowid=%u, flowseq=%u\n",
+		    __func__, seqdata.seq, flowid, seqrecord->flowseq);
 		seqrecord->ts = currenttime_tx;
 
 		if (ipv6)
@@ -1147,6 +1149,7 @@ getpps(int ifno)
 void
 transmit_set(int ifno, int on)
 {
+	DEBUGLOG("%s: ifno=%d, on=%d\n", __func__, ifno, on);
 	if (itemlist != NULL) {
 		switch (ifno) {
 		case 0:
@@ -1180,6 +1183,7 @@ interface_wait_linkupdown(const char *ifname, const int up, const int sec)
 	int i;
 
 	printf_verbose("%s: waiting link %s .", ifname, up ? "up" : "down");
+	DEBUGLOG("%s: waiting link %s .\n", ifname, up ? "up" : "down");
 	fflush(stdout);
 	for (i = sec * 2; i >= 0; i--) {
 		if (interface_is_active(ifname) == up)
@@ -1213,8 +1217,13 @@ interface_wait_linkdown(const char *ifname)
 static void
 interface_init(int ifno)
 {
+	char	name[SCNAME_MAX];
+
 	interface[ifno].seqtable = seqtable_new();
-	interface[ifno].seqchecker = seqcheck_new();
+	DEBUGLOG("%s: init %s, ifno %d\n",
+	    __func__, interface[ifno].ifname, ifno);
+	snprintf(name, sizeof(name), "if%d", ifno);
+	interface[ifno].seqchecker = seqcheck_new(name);
 }
 
 static void
@@ -1305,6 +1314,7 @@ interface_open(int ifno)
 	struct netmap_if *nifp;
 	struct netmap_ring *txring, *rxring;
 
+	DEBUGLOG("%s: called\n", __func__);
 	memset(&nmreq, 0, sizeof(nmreq));
 	sprintf(iface->netmapname, "netmap:%s", iface->ifname);
 
@@ -1737,7 +1747,8 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 	/* check sequence */
 	struct seqdata *seqdata;
 	struct sequence_record *seqrecord;
-	uint64_t seq, seqflow, nskip;
+	uint32_t seq, seqflow;
+	uint64_t nskip;
 	uint32_t flowid;
 	struct timespec ts_delta;
 	double latency;
@@ -1777,7 +1788,7 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 		if (opt_debuglevel > 1) {
 			/* DEBUG */
 			if (nskip > 2) {
-				printf("\r\n\r\n\r\n\r\n\r\n\r\n<seq=%"PRIu64", nskip=%"PRIu64", tx0=%"PRIu64", tx1=%"PRIu64">",
+				printf("\r\n\r\n\r\n\r\n\r\n\r\n<seq=%u, nskip=%"PRIu64", tx0=%"PRIu64", tx1=%"PRIu64">",
 				    seq, nskip, interface[0].sequence_tx, interface[1].sequence_tx);
 				dumpstr(buf, len, DUMPSTR_FLAGS_CRLF);
 			}
@@ -2426,6 +2437,7 @@ rx_thread_main(void *arg)
 	struct pollfd pollfd[1];
 	int rc;
 
+	DEBUGLOG("%s: called\n", __func__);
 	(void)pthread_sigmask(SIG_BLOCK, &used_sigset, NULL);
 
 	/* setup poll */
@@ -2483,6 +2495,8 @@ genscript_play(void)
 			switch (genitem->cmd) {
 			case GENITEM_CMD_RESET:
 				logging("script: reset ifstats");
+				DEBUGLOG("%s: script: reset ifstats",
+				    __func__);
 				statistics_clear();
 				break;
 			case GENITEM_CMD_NOP:
@@ -2492,12 +2506,18 @@ genscript_play(void)
 				logging("script: %s: packet size = %u, pps = %u",
 				    interface[0].ifname,
 				    genitem->pktsize, genitem->pps);
+				DEBUGLOG("%s: script: %s: packet size = %u, pps = %u",
+				    __func__, interface[0].ifname,
+				    genitem->pktsize, genitem->pps);
 				setpktsize(0, genitem->pktsize);
 				setpps(0, genitem->pps);
 				break;
 			case GENITEM_CMD_TX1SET:
 				logging("script: %s: packet size = %u, pps = %u",
 				    interface[1].ifname,
+				    genitem->pktsize, genitem->pps);
+				DEBUGLOG("%s: script: %s: packet size = %u, pps = %u",
+				    __func__, interface[1].ifname,
 				    genitem->pktsize, genitem->pps);
 				setpktsize(1, genitem->pktsize);
 				setpps(1, genitem->pps);
@@ -2559,6 +2579,7 @@ control_tty_handler(struct itemlist *itemlist)
 
 	case 'z':
 	case 'Z':
+		DEBUGLOG("%s: clear by z\n", __func__);
 		statistics_clear();
 		break;
 
@@ -2930,6 +2951,8 @@ rfc2544_test(void)
 	case RFC2544_START:
 		logging("start rfc2544 test mode. trial-duration is %d sec and interval is %d sec. warming up...",
 		    opt_rfc2544_trial_duration, opt_rfc2544_interval);
+		DEBUGLOG("RFC2544: start rfc2544 test mode. trial-duration is %d sec and interval is %d sec. warming up...\n",
+		    opt_rfc2544_trial_duration, opt_rfc2544_interval);
 
 		transmit_set(0, 0); /* interface[0]: disable transmit */
 		transmit_set(1, 1); /* interface[1]: enable transmit */
@@ -2941,6 +2964,7 @@ rfc2544_test(void)
 		break;
 
 	case RFC2544_WARMUP0:
+		DEBUGLOG("RFC2544: WARMUP0 -> WARMUP\n");
 		memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
 		statetime.tv_sec += RFC2544_WARMUP_SECS;
 		state = RFC2544_WARMUP;
@@ -2948,10 +2972,12 @@ rfc2544_test(void)
 	case RFC2544_WARMUP:
 		if (timespeccmp(&currenttime_main, &statetime, <))
 			break;
+		DEBUGLOG("RFC2544: WARMUP -> RFC2544_RESETTING0\n");
 		state = RFC2544_RESETTING0;
 		break;
 
 	case RFC2544_RESETTING0:
+		DEBUGLOG("RFC2544: RFC2544_RESETTING0 -> RFC2544_RESETTING\n");
 		transmit_set(1, 0);
 		statistics_clear();
 
@@ -2980,6 +3006,7 @@ rfc2544_test(void)
 		if (timespeccmp(&currenttime_main, &statetime, <))
 			break;
 
+		DEBUGLOG("RFC2544: RFC2544_RESETTING -> RFC2544_WARMING0\n");
 		/* enable transmit */
 		setpps(1, work->curpps);
 		setpktsize(1, work->pktsize);
@@ -2995,6 +3022,8 @@ rfc2544_test(void)
 		memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
 		statetime.tv_sec += opt_rfc2544_interval;
 		logging("interval: wait %d sec.", opt_rfc2544_interval);
+		DEBUGLOG("RFC2544: interval: wait %d sec.", opt_rfc2544_interval);
+		DEBUGLOG("RFC2544: RFC2544_INTERVAL0 -> RFC2544_INTERVAL");
 
 		state = RFC2544_INTERVAL;
 		break;
@@ -3003,6 +3032,7 @@ rfc2544_test(void)
 		if (timespeccmp(&currenttime_main, &statetime, <))
 			break;
 
+		DEBUGLOG("RFC2544: RFC2544_INTERVAL -> RFC2544_WARMING0");
 		state = RFC2544_WARMING0;
 		break;
 
@@ -3017,6 +3047,7 @@ rfc2544_test(void)
 		    calc_mbps(work->pktsize, work->minpps),
 		    calc_mbps(work->pktsize, work->maxpps));
 
+		DEBUGLOG("RFC2544: RFC2544_WARMING0 -> RFC2544_WARMING");
 		memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
 		statetime.tv_sec += opt_rfc2544_warming_duration;
 		state = RFC2544_WARMING;
@@ -4001,6 +4032,7 @@ main(int argc, char *argv[])
 	int vlan = 0;
 	char ifname[2][IFNAMSIZ];
 	char *testscript = NULL;
+	char scname[SCNAME_MAX];
 	uint64_t maxlinkspeed;
 
 	DEBUGOPEN("ipgen-debug.log");
@@ -4343,16 +4375,19 @@ main(int argc, char *argv[])
 		usage();
 	}
 
+	DEBUGLOG("%s: interface_up(01)\n", __func__);
 	if (!opt_txonly)
 		interface_up(ifname[0]);	/* RX */
 	if (!opt_rxonly)
 		interface_up(ifname[1]);	/* TX */
 
+	DEBUGLOG("%s: wait_linkup(01)\n", __func__);
 	if (!opt_rxonly)
 		interface_wait_linkup(ifname[1]);	/* TX */
 	if (!opt_txonly)
 		interface_wait_linkup(ifname[0]);	/* RX */
 
+	DEBUGLOG("Set linkspeed\n");
 	for (i = 0; i < 2; i++) {
 		if (opt_txonly && i == 0)
 			continue;
@@ -4410,6 +4445,7 @@ main(int argc, char *argv[])
 		}
 	}
 
+	DEBUGLOG("Set default pps\n");
 	if (pps == -1) {
 		for (i = 0; i < 2; i++)
 			if (interface[i].maxlinkspeed == LINKSPEED_1GBPS)
@@ -4456,6 +4492,7 @@ main(int argc, char *argv[])
 		setpps(0, 0);
 		setpps(1, 0);
 	} else {
+		DEBUGLOG("Set pps to %d\n", pps);
 		setpps(0, pps);
 		setpps(1, pps);
 	}
@@ -4490,11 +4527,13 @@ main(int argc, char *argv[])
 	/*
 	 * configure adrlist
 	 */
+	DEBUGLOG("addrlist\n");
 	for (i = 0; i < 2; i++) {
 		interface[i].adrlist = addresslist_new();
 		addresslist_setlimit(interface[i].adrlist, MAXFLOWNUM);
 	}
 
+	DEBUGLOG("flowlist\n");
 	if (opt_flowlist != NULL) {
 		FILE *fh;
 		char *line;
@@ -4548,6 +4587,7 @@ main(int argc, char *argv[])
 	}
 	update_min_pktsize();
 
+	DEBUGLOG("addrlist_rebuild\n");
 	if (opt_flowsort) {
 		addresslist_rebuild(interface[1].adrlist);
 		addresslist_rebuild(interface[0].adrlist);
@@ -4587,6 +4627,7 @@ main(int argc, char *argv[])
 	/*
 	 * Initialize packet transmission infrastructure
 	 */
+	DEBUGLOG("%s: interface_open\n", __func__);
 	if (!opt_rxonly)
 		interface_open(1);	/* TX */
 	if (!opt_txonly)
@@ -4599,6 +4640,7 @@ main(int argc, char *argv[])
 		interface_wait_linkdown(ifname[1]);	/* TX */
 
 	/* Then, check interfaces up */
+	DEBUGLOG("%s: wait_linkup(01)\n", __func__);
 	if (!opt_rxonly)
 		interface_wait_linkup(ifname[1]);	/* TX */
 	if (!opt_txonly)
@@ -4652,13 +4694,16 @@ main(int argc, char *argv[])
 	/*
 	 * allocate per frame seqchecker
 	 */
+	DEBUGLOG("init seqchecker\n");
 	j = get_flownum(0);
 	interface[0].sequence_tx_perflow = malloc(sizeof(uint64_t) * j);
 	memset(interface[0].sequence_tx_perflow, 0, sizeof(uint64_t) * j);
 	interface[0].seqchecker_perflow = malloc(sizeof(struct sequencechecker *) * j);
-	interface[0].seqchecker_flowtotal = seqcheck_new();
+	snprintf(scname, sizeof(scname), "if%d.flowtotal", 0);
+	interface[0].seqchecker_flowtotal = seqcheck_new(scname);
 	for (i = 0; i < j; i++) {
-		interface[0].seqchecker_perflow[i] = seqcheck_new();
+		snprintf(scname, sizeof(scname), "if%d.flow%d", 0, i);
+		interface[0].seqchecker_perflow[i] = seqcheck_new(scname);
 		if (interface[0].seqchecker_perflow[i] == NULL) {
 			fprintf(stderr, "cannot allocate %s flow sequence work %d/%d\n", interface[0].ifname, i, j);
 			exit(1);
@@ -4670,9 +4715,11 @@ main(int argc, char *argv[])
 	interface[1].sequence_tx_perflow = malloc(sizeof(uint64_t) * j);
 	memset(interface[1].sequence_tx_perflow, 0, sizeof(uint64_t) * j);
 	interface[1].seqchecker_perflow = malloc(sizeof(struct sequencechecker *) * j);
-	interface[1].seqchecker_flowtotal = seqcheck_new();
+	snprintf(scname, sizeof(scname), "if%d.flowtotal", 1);
+	interface[1].seqchecker_flowtotal = seqcheck_new(scname);
 	for (i = 0; i < j; i++) {
-		interface[1].seqchecker_perflow[i] = seqcheck_new();
+		snprintf(scname, sizeof(scname), "if%d.flow%d", 1, i);
+		interface[1].seqchecker_perflow[i] = seqcheck_new(scname);
 		if (interface[1].seqchecker_perflow[i] == NULL) {
 			fprintf(stderr, "cannot allocate %s flow sequence work %d/%d\n", interface[1].ifname, i, j);
 			exit(1);
@@ -4681,6 +4728,7 @@ main(int argc, char *argv[])
 	}
 
 
+	DEBUGLOG("init template packet\n");
 	for (i = 0; i < 2; i++) {
 		ip4pkt_udp_template(pktbuffer_ipv4[PKTBUF_UDP][i], 1500 + ETHHDRSIZE);
 		build_template_packet_ipv4(i, pktbuffer_ipv4[PKTBUF_UDP][i]);
@@ -4692,6 +4740,7 @@ main(int argc, char *argv[])
 		build_template_packet_ipv6(i, pktbuffer_ipv6[PKTBUF_TCP][i]);
 	}
 
+	DEBUGLOG("pthread_create()\n");
 	if (!opt_txonly) {
 		pthread_create(&txthread0, NULL, tx_thread_main, &ifnum[0]);
 		pthread_create(&rxthread0, NULL, rx_thread_main, &ifnum[0]);
@@ -4753,6 +4802,7 @@ main(int argc, char *argv[])
 #endif
 	}
 
+	DEBUGLOG("enable transmit\n");
 	/* update transmit flags */
 	if (!opt_txonly && opt_fulldup)
 		transmit_set(0, 1);
@@ -4792,6 +4842,7 @@ main(int argc, char *argv[])
 		setitimer(ITIMER_REAL, &itv, NULL);
 	}
 
+	DEBUGLOG("call main thread\n");
 	/* CUI/web interface thread */
 	control_thread_main(NULL);
 

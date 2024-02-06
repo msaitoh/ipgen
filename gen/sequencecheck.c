@@ -45,6 +45,7 @@
 #endif
 
 struct sequencechecker {
+	char sc_name[SCNAME_MAX];
 	uint32_t sc_high;	/* upper 32bit internal counter */
 	uint32_t sc_lastseq;	/* for checking reorder and extending 64bit */
 
@@ -203,13 +204,16 @@ seqcheck_init2(struct sequencechecker *sc, uint64_t seq64)
 }
 
 struct sequencechecker *
-seqcheck_new(void)
+seqcheck_new(char *name)
 {
 	struct sequencechecker *sc;
 
 	sc = malloc(sizeof(struct sequencechecker));
-	if (sc != NULL)
+	if (sc != NULL) {
 		seqcheck_init(sc);
+		strncpy(sc->sc_name, name, sizeof(sc->sc_name));
+		DEBUGLOG("%s: name=%s\n", __func__, sc->sc_name);
+	}
 
 	return sc;
 }
