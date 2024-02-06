@@ -1299,6 +1299,9 @@ interface_open(int ifno)
 	iface->opened = 1;
 }
 
+/*
+ * This function should be called after finishing TX/TX threads.
+ */
 void
 interface_close(int ifno)
 {
@@ -1309,34 +1312,7 @@ interface_close(int ifno)
 		interface_promisc(iface->ifname, iface->promisc_save, NULL);
 
 #ifdef USE_NETMAP
-#if 0	/* XXX */
-	/*
-	 * XXX: freebsd bug? closing netmap file descriptor sometimes cause panic
-	 *
-	 * panic: Bad link elm 0xffff0017e7df500 prev->next != elm
-	 * cpuid = 3
-	 * KDB: stack backtrace:
-	 * db_trace_self_wrapper()
-	 * vpanic()
-	 * panic()
-	 * selfdfree()
-	 * kern_poll()
-	 * sys_poll()
-	 * amd64_syscall()
-	 * Xfast_syscall()
-	 *
-	 */
 	nm_close(iface->nm_desc);
-#else
-
-	/*
-	 * timeout of poll() in rx_thread_main() is 100ms,
-	 * sleeping 200ms to wait returning from poll().
-	 */
-	usleep(200000);
-	nm_close(iface->nm_desc);
-#endif
-
 #elif defined(USE_AF_XDP)
 	/*
 	 * timeout of poll() in rx_thread_main() is 100ms,
