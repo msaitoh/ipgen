@@ -538,9 +538,9 @@ itemlist_update(struct itemlist *itemlist, int force)
 	if (!itemlist->ready) {
 		itemlist->ready = 1;
 		CLEAR();
-		PRINTF(itemlist->template);
+		PRINTF("%s", itemlist->template);
 	} else if (force)
-		PRINTF(itemlist->template);
+		PRINTF("%s", itemlist->template);
 
 
 #ifdef ITEM_DEBUG
