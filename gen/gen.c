@@ -654,8 +654,6 @@ touchup_tx_packet(char *buf, int ifno)
 		seqdata.seq = seqrecord->seq;
 		seqrecord->flowid = flowid;
 		seqrecord->flowseq = iface->sequence_tx_perflow[flowid]++;
-		DEBUGLOG("%s: seq=%u, flowid=%u, flowseq=%u\n",
-		    __func__, seqdata.seq, flowid, seqrecord->flowseq);
 		seqrecord->ts = currenttime_tx;
 
 		if (ipv6)
