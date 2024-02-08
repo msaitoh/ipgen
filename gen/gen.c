@@ -2975,6 +2975,7 @@ rfc2544_test(void)
 		break;
 
 	case RFC2544_RESETTING0:
+		logging("resetting. wait %ds", 2);
 		DEBUGLOG("RFC2544: RFC2544_RESETTING0 -> RFC2544_RESETTING\n");
 		transmit_set(1, 0);
 		statistics_clear();
