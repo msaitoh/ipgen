@@ -2452,14 +2452,14 @@ genscript_play(int unsigned n)
 				break;
 
 			case GENITEM_CMD_TX0SET:
-				logging("script: %s: packet size = %lu, pps = %lu",
+				logging("script: %s: packet size = %u, pps = %u",
 				    interface[0].ifname,
 				    genitem->pktsize, genitem->pps);
 				setpktsize(0, genitem->pktsize);
 				setpps(0, genitem->pps);
 				break;
 			case GENITEM_CMD_TX1SET:
-				logging("script: %s: packet size = %lu, pps = %lu",
+				logging("script: %s: packet size = %u, pps = %u",
 				    interface[1].ifname,
 				    genitem->pktsize, genitem->pps);
 				setpktsize(1, genitem->pktsize);
