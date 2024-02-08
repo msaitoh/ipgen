@@ -2315,8 +2315,7 @@ usage(void)
 	exit(1);
 }
 
-
-static char *
+char *
 timestamp(time_t t)
 {
 	static char tstamp[128];
