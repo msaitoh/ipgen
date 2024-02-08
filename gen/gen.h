@@ -105,7 +105,23 @@ extern FILE *debugfh;
 		if (debugfh == NULL)					\
 			err(2, "Failed to open %s", file);		\
 	} while (0)
-#define DEBUGLOG(fmt, args...)	do { fprintf(debugfh, fmt, ## args); fflush(debugfh); } while (0)
+/* Log to ipgen-debug.log with timestamp. */
+#define DEBUGLOG(fmt, args...)						 \
+	do {								 \
+		struct timespec realtime_now;				 \
+									 \
+		clock_gettime(CLOCK_REALTIME, &realtime_now);		 \
+		fprintf(debugfh, "%s ", timestamp(realtime_now.tv_sec)); \
+		fprintf(debugfh, fmt, ## args); fflush(debugfh);	 \
+	} while (0)
+/*
+ * Log to ipgen-debug.log without timestamp.
+ * Used to write multiple debuglog as one line.
+ */
+#define DEBUGLOG_CONT(fmt, args...)					\
+	do {								\
+		fprintf(debugfh, fmt, ## args); fflush(debugfh);	\
+	} while (0)
 #define DEBUGCLOSE()		fclose(debugfh)
 #else
 #define DEBUGOPEN(file)		((void)0)

@@ -38,7 +38,9 @@
 
 #if defined(DEBUG) && defined(TEST)
 #undef DEBUGLOG
+#undef DEBUGLOG_CONT
 #define DEBUGLOG(fmt, args...)	printf(fmt, ## args)
+#define DEBUGLOG_CONT(fmt, args...) printf(fmt, ## args)
 #endif
 
 struct sequencechecker {
