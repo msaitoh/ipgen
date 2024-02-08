@@ -2347,6 +2347,13 @@ logging(char const *fmt, ...)
 		vsnprintf(msgbuf, sizeof(msgbuf), fmt, ap);
 	}
 	va_end(ap);
+#ifdef DEBUG
+	va_start(ap, fmt);
+	fprintf(debugfh, "%s ", timestamp(realtime_now.tv_sec));
+	vfprintf(debugfh, fmt, ap);
+	fprintf(debugfh, "\n");
+	va_end(ap);
+#endif
 }
 
 
