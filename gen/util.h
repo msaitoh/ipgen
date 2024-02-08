@@ -36,6 +36,7 @@
 
 void chop(char *);
 char *getword(char *str, char sep, char **save, char *buf, size_t bufsize);
+char *timestamp(time_t);
 int interface_is_active(const char *);
 struct in_addr *getifipaddr(const char *, struct in_addr *, struct in_addr *);
 struct in6_addr *getifip6addr(const char *, struct in6_addr *, struct in6_addr *);

@@ -94,12 +94,10 @@ unsigned int getpktsize(int);
 int setpktsize(int, unsigned int);
 void transmit_set(int, int);
 int statistics_clear(void);
-char *timestamp(time_t);
 
 extern struct timespec currenttime;
 
 #ifdef DEBUG
-#include <time.h>
 extern FILE *debugfh;
 #define DEBUGOPEN(file)							\
 	do {								\

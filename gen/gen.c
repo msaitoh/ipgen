@@ -2315,20 +2315,6 @@ usage(void)
 	exit(1);
 }
 
-char *
-timestamp(time_t t)
-{
-	static char tstamp[128];
-	time_t mytime;
-	struct tm ltime;
-
-	mytime = t;
-	localtime_r(&mytime, &ltime);
-	strftime(tstamp, sizeof(tstamp), "%F %T", &ltime);
-
-	return tstamp;
-}
-
 static void
 logging(char const *fmt, ...)
 {

@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <err.h>
 #include <errno.h>
+#include <time.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <net/if.h>
@@ -204,6 +205,20 @@ getword(char *str, char sep, char **save, char *buf, size_t bufsize)
 			*d++ = c;
 	}
 	return buf;
+}
+
+char *
+timestamp(time_t t)
+{
+	static char tstamp[128];
+	time_t mytime;
+	struct tm ltime;
+
+	mytime = t;
+	localtime_r(&mytime, &ltime);
+	strftime(tstamp, sizeof(tstamp), "%F %T", &ltime);
+
+	return tstamp;
 }
 
 int
