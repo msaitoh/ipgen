@@ -2493,8 +2493,6 @@ genscript_play(void)
 			switch (genitem->cmd) {
 			case GENITEM_CMD_RESET:
 				logging("script: reset ifstats");
-				DEBUGLOG("%s: script: reset ifstats",
-				    __func__);
 				statistics_clear();
 				break;
 			case GENITEM_CMD_NOP:
@@ -2504,18 +2502,12 @@ genscript_play(void)
 				logging("script: %s: packet size = %u, pps = %u",
 				    interface[0].ifname,
 				    genitem->pktsize, genitem->pps);
-				DEBUGLOG("%s: script: %s: packet size = %u, pps = %u",
-				    __func__, interface[0].ifname,
-				    genitem->pktsize, genitem->pps);
 				setpktsize(0, genitem->pktsize);
 				setpps(0, genitem->pps);
 				break;
 			case GENITEM_CMD_TX1SET:
 				logging("script: %s: packet size = %u, pps = %u",
 				    interface[1].ifname,
-				    genitem->pktsize, genitem->pps);
-				DEBUGLOG("%s: script: %s: packet size = %u, pps = %u",
-				    __func__, interface[1].ifname,
 				    genitem->pktsize, genitem->pps);
 				setpktsize(1, genitem->pktsize);
 				setpps(1, genitem->pps);
@@ -2949,8 +2941,6 @@ rfc2544_test(void)
 	case RFC2544_START:
 		logging("start rfc2544 test mode. trial-duration is %d sec and interval is %d sec. warming up...",
 		    opt_rfc2544_trial_duration, opt_rfc2544_interval);
-		DEBUGLOG("RFC2544: start rfc2544 test mode. trial-duration is %d sec and interval is %d sec. warming up...\n",
-		    opt_rfc2544_trial_duration, opt_rfc2544_interval);
 
 		transmit_set(0, 0); /* interface[0]: disable transmit */
 		transmit_set(1, 1); /* interface[1]: enable transmit */
@@ -3021,7 +3011,6 @@ rfc2544_test(void)
 		memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
 		statetime.tv_sec += opt_rfc2544_interval;
 		logging("interval: wait %d sec.", opt_rfc2544_interval);
-		DEBUGLOG("RFC2544: interval: wait %d sec.", opt_rfc2544_interval);
 		DEBUGLOG("RFC2544: RFC2544_INTERVAL0 -> RFC2544_INTERVAL");
 
 		state = RFC2544_INTERVAL;
