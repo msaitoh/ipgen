@@ -114,7 +114,7 @@ FILE *debugfh;
 #define printf_verbose(fmt, args...)	do { if (verbose > 0) printf(fmt, ## args);} while (0)
 
 
-static void logging(char const *fmt, ...);
+static void logging(char const *fmt, ...) __printflike(1, 2);
 static void rfc2544_showresult(void);
 static void rfc2544_showresult_json(char *);
 static void quit(int);
