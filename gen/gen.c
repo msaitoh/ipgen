@@ -139,7 +139,7 @@ u_int opt_nflow = 0;
 bool use_curses = true;
 
 /* Some time related parameters for RFC2544 tests in seconds . */
-#define RFC2544_WARMUP_SECS		3
+#define RFC2544_WARMUP_SECS		30
 #define RFC2544_RESETTING_SECS		2
 #define RFC2544_INTERVAL_SECS_DEFAULT	0
 #define RFC2544_WARMING_SECS_DEFAULT	1
