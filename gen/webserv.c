@@ -96,7 +96,7 @@ handler_index(struct webserv *web, const char *path, int argc, char *argv[])
 		fh = fopen(buf, "r");
 
 		if (fh != NULL) {
-			fprintf(web->fh, 
+			fprintf(web->fh,
 			    "HTTP/1.0 200 Found\r\n"
 			    "Content-Type: text/html\r\n"
 			    "\r\n");
@@ -111,7 +111,7 @@ handler_index(struct webserv *web, const char *path, int argc, char *argv[])
 		}
 
 	} else if (argc == 0) {
-		fprintf(web->fh, 
+		fprintf(web->fh,
 		    "HTTP/1.0 200 Found\r\n"
 		    "Content-Type: text/html\r\n"
 		    "\r\n"

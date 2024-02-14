@@ -41,7 +41,7 @@ main(int argc, char *argv[])
 	char buf[1514];
 	int len, fd;
 
-	const struct ether_addr sha = { 1,2,3,4,5,6};
+	const struct ether_addr sha = { 1,2,3,4,5,6 };
 	in_addr_t s, t;
 
 	fd = tcpdumpfile_open(NULL);

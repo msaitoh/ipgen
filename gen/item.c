@@ -38,13 +38,13 @@
 /* XXX: use termcap/terminfo */
 #ifdef ITEM_DEBUG
 #define	CLEAR()		(void)0
-#define	LOCATE(x,y)	(void)0
+#define	LOCATE(x, y)	(void)0
 #define	REFRESH()	(void)0
 #define	PRINTF(format, args...)	printf(format, ## args)
 #define	BEEP()		(void)0
 #else
 #define	CLEAR()		clear()
-#define	LOCATE(x,y)	move(y,x)
+#define	LOCATE(x, y)	move(y, x)
 #define	REFRESH()	refresh()
 #define	PRINTF(format, args...)	printw(format, ## args)
 #define	BEEP()		beep()

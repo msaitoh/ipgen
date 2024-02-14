@@ -631,7 +631,7 @@ touchup_tx_packet(char *buf, int ifno)
 		seqrecord->flowseq = iface->sequence_tx_perflow[flowid]++;
 		seqrecord->ts = currenttime_tx;
 
-		if (ipv6) 
+		if (ipv6)
 			ip6pkt_writedata(buf, l3offset, l4payloadsize - sizeof(seqdata), (char *)&seqdata, sizeof(seqdata));
 		else
 			ip4pkt_writedata(buf, l3offset, l4payloadsize - sizeof(seqdata), (char *)&seqdata, sizeof(seqdata));
@@ -980,7 +980,7 @@ calc_ipg(int ifno)
 			return;
 		}
 
-		/* 82599 and newer */ 
+		/* 82599 and newer */
 		if (iface->transmit_pps == 0) {
 			bps = 0;
 		} else {
