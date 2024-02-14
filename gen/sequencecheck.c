@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include "gen.h"
+#include "util.h"
 #include "sequencecheck.h"
 
 #if defined(__FreeBSD__) && defined(__x86_64__)

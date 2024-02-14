@@ -57,6 +57,8 @@
 #ifndef _GEN_H_
 #define _GEN_H_
 
+#include <time.h>
+
 #ifndef timespeccmp
 #define	timespeccmp(tvp, uvp, cmp)					\
 	(((tvp)->tv_sec == (uvp)->tv_sec) ?				\
