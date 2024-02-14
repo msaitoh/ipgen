@@ -4319,14 +4319,6 @@ main(int argc, char *argv[])
 					fprintf(stderr,
 					    "%s: WARINIG: baudrate(%lu) < IF_Mbps(10)\n",
 					    ifname[i], linkspeed);
-				} else if (linkspeed > IF_Gbps(10)) {
-					/*
-					 * If the baudrate is higher than 10Gbps,
-					 * something is wrong.
-					 */
-					fprintf(stderr,
-					    "%s: WARINIG: baudrate(%lu) > IF_Gbps(10)\n",
-					    ifname[i], linkspeed);
 				} else {
 					interface[i].maxlinkspeed = linkspeed;
 					printf_verbose("%s: linkspeed = %lu\n", ifname[i], linkspeed);
