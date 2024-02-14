@@ -85,7 +85,7 @@ static int ip6pkt_icmp_uint16(char *, unsigned int, int, uint16_t);
 int
 ip6pkt_neighbor_solicit(char *buf, const struct ether_addr *sha, struct in6_addr *addr1, struct in6_addr *addr2)
 {
-	u_int8_t edst[ETHER_ADDR_LEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };	/* XXX: should to use multicast address */
+	uint8_t edst[ETHER_ADDR_LEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };	/* XXX: should to use multicast address */
 	struct ndpkt_l2 *ndpkt;
 	unsigned int ip6len, protolen;
 	int len;
