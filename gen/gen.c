@@ -111,7 +111,11 @@
 FILE *debugfh;
 #endif
 
-#define printf_verbose(fmt, args...)	do { if (verbose > 0) printf(fmt, ## args);} while (0)
+#define printf_verbose(fmt, args...)		\
+	do {					\
+		if (verbose > 0)		\
+			printf(fmt, ## args);	\
+	} while (0)
 
 
 static void logging(char const *fmt, ...) __printflike(1, 2);
@@ -795,13 +799,15 @@ reset_ipg(int ifno)
 	const char *drvname = iface->drvname;
 
 #ifdef __linux__
-#define BUILD_CMD(target, value)	snprintf(buf, sizeof(buf), \
-					    "echo %d > /sys/class/net/%s/%s", \
-					    value, iface->ifname, target);
+#define BUILD_CMD(target, value)				\
+	snprintf(buf, sizeof(buf),				\
+	    "echo %d > /sys/class/net/%s/%s",			\
+	    value, iface->ifname, target);
 #else
-#define BUILD_CMD(target, value)	snprintf(buf, sizeof(buf), \
-					    "sysctl -q -w dev.%s.%lu.%s=%d > /dev/null", \
-					    drvname, iface->unit, target, value);
+#define BUILD_CMD(target, value)				\
+	snprintf(buf, sizeof(buf),				\
+	    "sysctl -q -w dev.%s.%lu.%s=%d > /dev/null",	\
+	    drvname, iface->unit, target, value);
 #endif
 
 	if (!support_ipg)
