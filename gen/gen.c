@@ -4538,6 +4538,15 @@ main(int argc, char *argv[])
 	if (!opt_rxonly)
 		interface_open(1);	/* TX */
 
+	/*
+	 * Wait a little for link status to be stable.
+	 * interface_open() usually causes link down. The link down
+	 * may be delayed and/or flap. The link down might be occurred
+	 * after the following interface_wait_linkup() check.
+	 * To avoid this problem, wait 2 seconds.
+	 */
+	sleep(2);
+
 	if (!opt_rxonly)
 		interface_wait_linkup(ifname[1]);	/* TX */
 	if (!opt_txonly)
