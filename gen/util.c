@@ -48,6 +48,7 @@
 #endif
 #include "util.h"
 #include "compat.h"
+#include "gen.h"
 
 char *
 ip6_sprintf(struct in6_addr *addr)
@@ -484,6 +485,9 @@ interface_get_baudrate(const char *ifname)
 #endif
 }
 
+
+extern bool use_curses;
+
 void
 interface_promisc(const char *ifname, int enable, int *old)
 {
@@ -531,6 +535,8 @@ interface_promisc(const char *ifname, int enable, int *old)
 	rc = ioctl(fd, SIOCSIFFLAGS, (caddr_t)&ifr);
 	if (rc == -1)
 		fprintf(stderr, "ioctl: SIOCSIFFLAGS: %s\n", strerror(errno));
+	else
+		DEBUGLOG("%s: %s: Set promisc\n", __func__, ifname);
 out:
 	close(fd);
 }

@@ -99,6 +99,8 @@ int statistics_clear(void);
 
 extern struct timespec currenttime;
 
+#define DEBUG 1
+
 #ifdef DEBUG
 extern FILE *debugfh;
 #define DEBUGOPEN(file)							\
@@ -113,6 +115,10 @@ extern FILE *debugfh;
 		struct timespec realtime_now;				 \
 									 \
 		clock_gettime(CLOCK_REALTIME, &realtime_now);		 \
+		if (!use_curses) {					 \
+			printf("%s ", timestamp(realtime_now.tv_sec));	 \
+			printf(fmt, ## args); fflush(stdout);		 \
+		}							 \
 		fprintf(debugfh, "%s ", timestamp(realtime_now.tv_sec)); \
 		fprintf(debugfh, fmt, ## args); fflush(debugfh);	 \
 	} while (0)

@@ -116,12 +116,15 @@
 FILE *debugfh;
 #endif
 
-#define printf_verbose(fmt, args...)		\
-	do {					\
-		if (verbose > 0)		\
-			printf(fmt, ## args);	\
+#define printf_verbose(fmt, args...)					\
+	do {								\
+		if (verbose > 0) {					\
+			struct timespec realtime_now;			\
+			clock_gettime(CLOCK_REALTIME, &realtime_now);	\
+			printf("%s ", timestamp(realtime_now.tv_sec));	\
+			printf(fmt, ## args);				\
+		}							\
 	} while (0)
-
 
 static void logging(char const *fmt, ...) __printflike(1, 2);
 static void rfc2544_showresult(void);
@@ -1307,7 +1310,10 @@ interface_open(int ifno)
 		exit(1);
 	}
 
-
+#if 0
+	DEBUGLOG("%s: wait 10s\n", __func__);
+	sleep(10);
+#endif
 	nifp = iface->nm_desc->nifp;
 	txring = NETMAP_TXRING(nifp, 0);
 	rxring = NETMAP_RXRING(nifp, 0);
@@ -2908,6 +2914,13 @@ rfc2544_up_pps(void)
 	return 0;
 }
 
+#define RFC2544_WARMUPSECS	10
+
+
+pthread_cond_t pcond;
+pthread_mutex_t pmutex;
+time_t T;
+
 static void
 rfc2544_test(void)
 {
@@ -2915,11 +2928,19 @@ rfc2544_test(void)
 	static rfc2544_state_t state = RFC2544_START;
 	static struct timespec statetime;
 	int measure_done, do_down_pps;
+//	struct timespec t;
 
 	switch (state) {
 	case RFC2544_START:
-		logging("start rfc2544 test mode. trial-duration is %d sec and interval is %d sec. warming up...",
-		    opt_rfc2544_trial_duration, opt_rfc2544_interval);
+#if 0
+		time(&T);
+		t.tv_sec = T + 10;
+		t.tv_nsec = 0;
+		pthread_cond_timedwait(&pcond, &pmutex, &t);
+		DEBUGLOG("RFC2544: START: 10s 0?\n");
+#endif
+		logging("start rfc2544 test mode. trial-duration is %d sec and interval is %d sec. warming up %d sec...",
+		    opt_rfc2544_trial_duration, opt_rfc2544_interval, RFC2544_WARMUPSECS);
 
 		transmit_set(0, 0); /* interface[0]: disable transmit */
 		transmit_set(1, 1); /* interface[1]: enable transmit */
@@ -2927,21 +2948,25 @@ rfc2544_test(void)
 		setpps(1, 10000);
 		setpktsize(0, 0);
 		setpktsize(1, 0);
+		DEBUGLOG("RFC2544: START -> WARMUP0\n");
 		state = RFC2544_WARMUP0;
 		break;
 
 	case RFC2544_WARMUP0:
+		DEBUGLOG("RFC2544: WARMUP0 -> WARMUP\n");
 		memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
-		statetime.tv_sec += 3;	/* wait 3sec */
+		statetime.tv_sec += RFC2544_WARMUPSECS;
 		state = RFC2544_WARMUP;
 		break;
 	case RFC2544_WARMUP:
 		if (timespeccmp(&currenttime_main, &statetime, <))
 			break;
+		DEBUGLOG("RFC2544: WARMUP -> RFC2544_RESETTING0\n");
 		state = RFC2544_RESETTING0;
 		break;
 
 	case RFC2544_RESETTING0:
+		DEBUGLOG("RFC2544: RFC2544_RESETTING0\n");
 		transmit_set(1, 0);
 		statistics_clear();
 
@@ -2960,6 +2985,7 @@ rfc2544_test(void)
 		work->prevpps = 0;
 		work->curpps = work->maxup;
 
+		DEBUGLOG("RFC2544: RFC2544_RESETTING0 -> RFC2544_RESETTING\n");
 		memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
 		statetime.tv_sec += 2;	/* wait 2sec */
 		state = RFC2544_RESETTING;
@@ -2970,22 +2996,26 @@ rfc2544_test(void)
 		if (timespeccmp(&currenttime_main, &statetime, <))
 			break;
 
+		DEBUGLOG("RFC2544: RFC2544_RESETTING\n");
 		/* enable transmit */
 		setpps(1, work->curpps);
 		setpktsize(1, work->pktsize);
 		statistics_clear();
 		transmit_set(1, 1);
 
+		DEBUGLOG("RFC2544: RFC2544_RESETTING -> RFC2544_WARMING0\n");
 		state = RFC2544_WARMING0;
 		break;
 
 	case RFC2544_INTERVAL0:
+		DEBUGLOG("RFC2544: RFC2544_INTERVAL0\n");
 		transmit_set(1, 0);
 		statistics_clear();
 		memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
 		statetime.tv_sec += opt_rfc2544_interval;
 		logging("interval: wait %d sec.", opt_rfc2544_interval);
 
+		DEBUGLOG("RFC2544: RFC2544_INTERVAL0 -> RFC2544_INTERVAL\n");
 		state = RFC2544_INTERVAL;
 		break;
 
@@ -2993,10 +3023,12 @@ rfc2544_test(void)
 		if (timespeccmp(&currenttime_main, &statetime, <))
 			break;
 
+		DEBUGLOG("RFC2544: RFC2544_INTERVAL -> RFC2544_WARMING0\n");
 		state = RFC2544_WARMING0;
 		break;
 
 	case RFC2544_WARMING0:
+		DEBUGLOG("RFC2544: RFC2544_WARMING0\n");
 		transmit_set(1, 1);
 		statistics_clear();
 		logging("warming: %d sec, pktsize %u, pps %u, %.2fMbps [%.2fMbps:%.2fMbps]",
@@ -3007,6 +3039,7 @@ rfc2544_test(void)
 		    calc_mbps(work->pktsize, work->minpps),
 		    calc_mbps(work->pktsize, work->maxpps));
 
+		DEBUGLOG("RFC2544: RFC2544_WARMING0 -> RFC2544_WARMING\n");
 		memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
 		statetime.tv_sec += opt_rfc2544_warming_duration;
 		state = RFC2544_WARMING;
@@ -3016,6 +3049,7 @@ rfc2544_test(void)
 		if (timespeccmp(&currenttime_main, &statetime, <))
 			break;
 
+		DEBUGLOG("RFC2544: RFC2544_WARMING -> RFC2544_MEASURING0\n");
 		statistics_clear();
 		state = RFC2544_MEASURING0;
 		break;
@@ -3037,6 +3071,7 @@ rfc2544_test(void)
 			    calc_mbps(work->pktsize, work->curpps));
 		}
 
+		DEBUGLOG("RFC2544: RFC2544_MEASURING0 -> RFC2544_MEASURING\n");
 		memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
 		statetime.tv_sec += opt_rfc2544_trial_duration;
 		state = RFC2544_MEASURING;
@@ -3118,6 +3153,7 @@ rfc2544_test(void)
 				memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
 				statetime.tv_sec += opt_rfc2544_interval;
 				logging("interval: wait %d sec.", opt_rfc2544_interval);
+				DEBUGLOG("RFC2544: RFC2544_MEASURING -> RFC2544_INTERVAL\n");
 				state = RFC2544_INTERVAL;
 			}
 		}
@@ -3132,8 +3168,10 @@ rfc2544_test(void)
 			rfc2544_nthtest++;
 			if (rfc2544_nthtest >= rfc2544_ntest) {
 				logging("complete");
+				DEBUGLOG("RFC2544: RFC2544_MEASURING -> RFC2544_DONE0\n");
 				state = RFC2544_DONE0;
 			} else {
+				DEBUGLOG("RFC2544: RFC2544_MEASURING -> RFC2544_RESETTING0\n");
 				state = RFC2544_RESETTING0;
 			}
 		}
@@ -4434,9 +4472,13 @@ main(int argc, char *argv[])
 	if (rfc2544_ntest == 0)
 		rfc2544_load_default_test(maxlinkspeed);
 
-	if (opt_rfc2544)
+	if (opt_rfc2544) {
 		rfc2544_calc_param(maxlinkspeed);
 
+		pthread_mutex_init(&pmutex, NULL);
+		pthread_cond_init(&pcond, NULL);
+		pthread_mutex_lock(&pmutex);
+	}
 
 	if (testscript != NULL) {
 		genscript = genscript_new(testscript);
@@ -4574,6 +4616,8 @@ main(int argc, char *argv[])
 		    (unsigned long)calc_bps(interface[0].pktsize, interface[0].transmit_pps));
 	}
 
+	sleep(5);
+	DEBUGLOG("goto interface open\n");
 	/*
 	 * Initialize packet transmission infrastructure
 	 */
@@ -4581,6 +4625,13 @@ main(int argc, char *argv[])
 		interface_open(1);	/* TX */
 	if (!opt_txonly)
 		interface_open(0);	/* RX */
+
+#if 0
+	DEBUGLOG("end of interface open\n");
+
+	sleep(10);
+	DEBUGLOG("goto interface wait linkup\n");
+#endif
 
 	/* First, make sure interfaces down */
 	if (!opt_txonly)
@@ -4594,6 +4645,7 @@ main(int argc, char *argv[])
 	if (!opt_txonly)
 		interface_wait_linkup(ifname[0]);	/* RX */
 
+	DEBUGLOG("end of interface wait linkup\n");
 	for (i = 0; i < 2; i++) {
 		char inetbuf1[INET6_ADDRSTRLEN];
 		char inetbuf2[INET6_ADDRSTRLEN];
