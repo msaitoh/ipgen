@@ -2905,9 +2905,8 @@ rfc2544_test(void)
 		logging("start rfc2544 test mode. trial-duration is %d sec and interval is %d sec. warming up...",
 		    opt_rfc2544_trial_duration, opt_rfc2544_interval);
 
-		/* disable transmit */
-		transmit_set(0, 0);
-		transmit_set(1, 1);
+		transmit_set(0, 0); /* interface[0]: disable transmit */
+		transmit_set(1, 1); /* interface[1]: enable transmit */
 		setpps(0, 0);
 		setpps(1, 10000);
 		setpktsize(0, 0);
