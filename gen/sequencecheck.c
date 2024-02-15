@@ -416,7 +416,6 @@ seqcheck_receive(struct sequencechecker *sc, uint32_t seq)
 		if (((sc->sc_bitmap_start % 64) != 0) || (sc->sc_bitmap_end == 0))
 			DEBUGLOG("seqcheck_receive: (post) Wrong start or end. s64=%"PRIu64", i=%"PRIu64", bitmap_start=%"PRIu64", bitmap_end=%"PRIu64", baseidx=%d\n",
 			    seq64, i, sc->sc_bitmap_start, sc->sc_bitmap_end, sc->sc_bitmap_baseidx);
-		
 	}
 
 	/* The sequence advanced more than whole bitmap entries. */
@@ -424,7 +423,7 @@ seqcheck_receive(struct sequencechecker *sc, uint32_t seq)
 #ifdef DEBUG
 		uint64_t save;
 #endif
-		
+
 		/* Re-calculate remains after finishing the above for loop. */
 		n = ((seq64 - sc->sc_bitmap_end) + BIT_PER_DATA) / BIT_PER_DATA;
 
