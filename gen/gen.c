@@ -129,7 +129,7 @@ char ipgen_version[] = "1.29";
 #define DEFAULT_PPS_HZ		1000
 int pps_hz = DEFAULT_PPS_HZ;
 int opt_npkt_sync = 0x7fffffff;
-int opt_nflow = 0;
+u_int opt_nflow = 0;
 
 bool use_curses = true;
 
@@ -472,7 +472,7 @@ in_range(int num, int begin, int end)
 	return 1;
 }
 
-static inline int
+static inline u_int
 get_flowid_max(int ifno)
 {
 	return addresslist_get_tuplenum(interface[ifno].adrlist) - 1;
