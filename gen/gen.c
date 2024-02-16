@@ -4624,7 +4624,6 @@ main(int argc, char *argv[])
 		    (unsigned long)calc_bps(interface[0].pktsize, interface[0].transmit_pps));
 	}
 
-	sleep(5);
 	DEBUGLOG("goto interface open\n");
 	/*
 	 * Initialize packet transmission infrastructure
@@ -4634,10 +4633,10 @@ main(int argc, char *argv[])
 	if (!opt_txonly)
 		interface_open(0);	/* RX */
 
-#if 0
+#if 1
 	DEBUGLOG("end of interface open\n");
 
-	sleep(10);
+	sleep(3);
 	DEBUGLOG("goto interface wait linkup\n");
 #endif
 
