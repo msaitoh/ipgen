@@ -33,6 +33,7 @@
 #endif
 #include <ifaddrs.h>
 #include <net/ethernet.h>
+#include <netinet/in.h>
 
 void chop(char *);
 char *getword(char *str, char sep, char **save, char *buf, size_t bufsize);
