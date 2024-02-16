@@ -64,7 +64,7 @@ struct itemlist {
 
 	/* line editor */
 	int linebuffer_x, linebuffer_y;
-	int linebuffer_cursor;
+	u_int linebuffer_cursor;
 	char linebuf[128];
 	union item_value save;
 };
@@ -660,7 +660,7 @@ static int
 itemlist_editor(struct itemlist *itemlist, int c)
 {
 	struct item *item;
-	int i;
+	u_int i;
 
 	item = &itemlist->items[itemlist->focus];
 
@@ -734,7 +734,7 @@ itemlist_editor(struct itemlist *itemlist, int c)
 		break;
 	default:
 		i = strlen(itemlist->linebuf);
-		if ((i >= item->w) || (i >= sizeof(itemlist->linebuf))) {
+		if ((i >= (u_int)item->w) || (i >= sizeof(itemlist->linebuf))) {
 			BEEP();
 		} else {
 			i = strlen(&itemlist->linebuf[itemlist->linebuffer_cursor]) + 1;
