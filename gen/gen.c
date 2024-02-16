@@ -111,7 +111,11 @@
 FILE *debugfh;
 #endif
 
-#define printf_verbose(fmt, args...)	do { if (verbose > 0) printf(fmt, ## args);} while (0)
+#define printf_verbose(fmt, args...)		\
+	do {					\
+		if (verbose > 0)		\
+			printf(fmt, ## args);	\
+	} while (0)
 
 
 static void logging(char const *fmt, ...) __printflike(1, 2);
@@ -627,7 +631,7 @@ touchup_tx_packet(char *buf, int ifno)
 		seqrecord->flowseq = iface->sequence_tx_perflow[flowid]++;
 		seqrecord->ts = currenttime_tx;
 
-		if (ipv6) 
+		if (ipv6)
 			ip6pkt_writedata(buf, l3offset, l4payloadsize - sizeof(seqdata), (char *)&seqdata, sizeof(seqdata));
 		else
 			ip4pkt_writedata(buf, l3offset, l4payloadsize - sizeof(seqdata), (char *)&seqdata, sizeof(seqdata));
@@ -795,13 +799,15 @@ reset_ipg(int ifno)
 	const char *drvname = iface->drvname;
 
 #ifdef __linux__
-#define BUILD_CMD(target, value)	snprintf(buf, sizeof(buf), \
-					    "echo %d > /sys/class/net/%s/%s", \
-					    value, iface->ifname, target);
+#define BUILD_CMD(target, value)				\
+	snprintf(buf, sizeof(buf),				\
+	    "echo %d > /sys/class/net/%s/%s",			\
+	    value, iface->ifname, target);
 #else
-#define BUILD_CMD(target, value)	snprintf(buf, sizeof(buf), \
-					    "sysctl -q -w dev.%s.%lu.%s=%d > /dev/null", \
-					    drvname, iface->unit, target, value);
+#define BUILD_CMD(target, value)				\
+	snprintf(buf, sizeof(buf),				\
+	    "sysctl -q -w dev.%s.%lu.%s=%d > /dev/null",	\
+	    drvname, iface->unit, target, value);
 #endif
 
 	if (!support_ipg)
@@ -974,7 +980,7 @@ calc_ipg(int ifno)
 			return;
 		}
 
-		/* 82599 and newer */ 
+		/* 82599 and newer */
 		if (iface->transmit_pps == 0) {
 			bps = 0;
 		} else {

@@ -85,7 +85,7 @@ static int ip6pkt_icmp_uint16(char *, unsigned int, int, uint16_t);
 int
 ip6pkt_neighbor_solicit(char *buf, const struct ether_addr *sha, struct in6_addr *addr1, struct in6_addr *addr2)
 {
-	u_int8_t edst[ETHER_ADDR_LEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };	/* XXX: should to use multicast address */
+	uint8_t edst[ETHER_ADDR_LEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };	/* XXX: should to use multicast address */
 	struct ndpkt_l2 *ndpkt;
 	unsigned int ip6len, protolen;
 	int len;
@@ -185,7 +185,7 @@ ip6pkt_neighbor_solicit_reply(char *buf, const char *solicitbuf, u_char *eaddr, 
 
 	ndpkt_l2->ip6.ip6_dst = ondpkt_l3->ip6.ip6_src;
 	ndpkt_l2->nd_icmp6.icmp6_type = ND_NEIGHBOR_ADVERT;
-	ndpkt_l2->nd_icmp6.icmp6_data32[0] = 
+	ndpkt_l2->nd_icmp6.icmp6_data32[0] =
 	    ND_NA_FLAG_SOLICITED |
 	    ND_NA_FLAG_OVERRIDE;
 
@@ -480,7 +480,7 @@ ip6pkt_srcdst(int srcdst, char *buf, unsigned int l3offset, const struct in6_add
 		ip6->ip6_src = *addr;
 	} else {
 		old = ip6->ip6_dst;
-		ip6->ip6_dst= *addr;
+		ip6->ip6_dst = *addr;
 	}
 
 #ifndef s6_addr16
