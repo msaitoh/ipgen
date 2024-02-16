@@ -1067,9 +1067,9 @@ update_transmit_Mbps(int ifno)
 	struct interface *iface = &interface[ifno];
 
 	if (iface->pktsize < min_pktsize)
-		iface->pktsize  = min_pktsize;
+		iface->pktsize = min_pktsize;
 	if (iface->pktsize > 1500)
-		iface->pktsize  = 1500;
+		iface->pktsize = 1500;
 
 	if (iface->transmit_enable) {
 		iface->transmit_Mbps = calc_mbps(iface->pktsize, iface->transmit_pps);
