@@ -190,7 +190,7 @@ int opt_flowsort = 0;
 int opt_flowdump = 0;
 char *opt_flowlist = NULL;
 
-int min_pktsize = 46;	/* not include ether-header. udp4:46, tcp4:46, udp6:54, tcp6:66 */
+u_int min_pktsize = 46;	/* not include ether-header. udp4:46, tcp4:46, udp6:54, tcp6:66 */
 
 int force_redraw_screen = 0;
 int do_quit = 0;
