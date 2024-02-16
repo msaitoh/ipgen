@@ -87,7 +87,7 @@ static int getifinfo(const char *, int *, uint8_t *);
 			(vsp)->tv_nsec -= 1000000000L;			\
 		}							\
 	} while (/* CONSTCOND */ 0)
-#define TIMESPECSUB(tsp, usp, vsp)                                      \
+#define TIMESPECSUB(tsp, usp, vsp)					\
 	do {								\
 		(vsp)->tv_sec = (tsp)->tv_sec - (usp)->tv_sec;		\
 		(vsp)->tv_nsec = (tsp)->tv_nsec - (usp)->tv_nsec;	\
