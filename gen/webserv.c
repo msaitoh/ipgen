@@ -219,7 +219,7 @@ pathhandler(struct webserv *web, char *path)
 	struct urlhandler *match;
 	const char *p;
 	char *q;
-	int i;
+	u_int i;
 #define MAXARGV	32
 	char *argv[MAXARGV];
 
