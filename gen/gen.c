@@ -128,7 +128,7 @@ char ipgen_version[] = "1.29";
 #define DISPLAY_UPDATE_HZ	20
 #define DEFAULT_PPS_HZ		1000
 u_int pps_hz = DEFAULT_PPS_HZ;
-int opt_npkt_sync = 0x7fffffff;
+u_int opt_npkt_sync = 0x7fffffff;
 u_int opt_nflow = 0;
 
 bool use_curses = true;
