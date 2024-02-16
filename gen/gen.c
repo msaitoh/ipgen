@@ -2552,8 +2552,8 @@ struct rfc2544_work {
 
 #define RFC2544_MAXTESTNUM	64
 struct rfc2544_work rfc2544_work[RFC2544_MAXTESTNUM];
-static int rfc2544_ntest = 0;
-static int rfc2544_nthtest = 0;
+static u_int rfc2544_ntest = 0;
+static u_int rfc2544_nthtest = 0;
 
 typedef enum {
 	RFC2544_START,
@@ -2609,7 +2609,7 @@ rfc2544_load_default_test(uint64_t maxlinkspeed)
 static void
 rfc2544_calc_param(uint64_t maxlinkspeed)
 {
-	int i;
+	u_int i;
 
 	for (i = 0; i < rfc2544_ntest; i++) {
 		rfc2544_work[i].maxpps = maxlinkspeed / 8 / (rfc2544_work[i].pktsize + 18 + DEFAULT_IFG + DEFAULT_PREAMBLE);
@@ -2621,7 +2621,7 @@ rfc2544_showresult(void)
 {
 	double mbps, tmp;
 	unsigned int pps, linkspeed;
-	int i, j;
+	u_int i, j;
 
 	/*
 	 * [example]
@@ -2767,7 +2767,7 @@ void
 rfc2544_showresult_json(char *filename)
 {
 	double bps;
-	int i;
+	u_int i;
 	FILE *fp;
 
 	/*
