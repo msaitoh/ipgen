@@ -68,7 +68,7 @@ genscript_add_item(struct genscript *genscript, unsigned int cmd, unsigned int p
 }
 
 struct genscript_item *
-genscript_get_item(struct genscript *genscript, int idx)
+genscript_get_item(struct genscript *genscript, u_int idx)
 {
 	if (idx < 0 || idx >= genscript->nitems)
 		return NULL;

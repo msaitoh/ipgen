@@ -2423,7 +2423,7 @@ rx_thread_main(void *arg)
 static void
 genscript_play(int unsigned n)
 {
-	static int nth_test = -1;
+	static u_int nth_test = 0;
 	static int period_left = 0;
 	struct genscript_item *genitem;
 
@@ -2433,8 +2433,8 @@ genscript_play(int unsigned n)
 	period_left--;
 	if (period_left <= 0) {
 		do {
-			nth_test++;
 			genitem = genscript_get_item(genscript, nth_test);
+			nth_test++;
 			if (genitem == NULL) {
 				quit(false);
 				return;
