@@ -698,12 +698,13 @@ getdrvname(const char *ifname, char *drvname)
 static int
 getifunit(const char *ifname, char *drvname, unsigned long *unit)
 {
-	int i;
+	u_int i;
 
-	for (i = strlen(ifname) - 1; i >= 0; i--)
+	for (i = strlen(ifname) - 1; i > 0; i--)
 		if (!isdigit(*(ifname + i)))
 			break;
-	if ((i < 0) || (i == strlen(ifname) - 1))
+	if (((i == 0) && isdigit(ifname[0])) || /* All characters are digit */
+	    (i == strlen(ifname) - 1)) /* The last character is not digit */
 		return -1;
 
 	i++;
