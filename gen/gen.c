@@ -3223,7 +3223,7 @@ control_interval(struct itemlist *itemlist)
 }
 
 static int
-itemlist_callback_burst_steady(struct itemlist *itemlist, struct item *item, void *refptr __unused)
+itemlist_callback_burst_steady(struct itemlist *itemlist __unused, struct item *item, void *refptr __unused)
 {
 	switch (item->id) {
 	case ITEMLIST_ID_BUTTON_BURST:
@@ -3264,7 +3264,7 @@ itemlist_callback_l1_l2(struct itemlist *itemlist, struct item *item, void *refp
 }
 
 static int
-itemlist_callback_nflow(struct itemlist *itemlist, struct item *item, void *refptr)
+itemlist_callback_nflow(struct itemlist *itemlist __unused, struct item *item __unused, void *refptr)
 {
 	int *nflow_test;
 
@@ -3279,7 +3279,7 @@ itemlist_callback_nflow(struct itemlist *itemlist, struct item *item, void *refp
 }
 
 static int
-itemlist_callback_pktsize(struct itemlist *itemlist, struct item *item, void *refptr)
+itemlist_callback_pktsize(struct itemlist *itemlist __unused, struct item *item, void *refptr)
 {
 	uint32_t *pktsize;
 	int ifno;
@@ -3307,7 +3307,7 @@ itemlist_callback_pktsize(struct itemlist *itemlist, struct item *item, void *re
 }
 
 static int
-itemlist_callback_pps(struct itemlist *itemlist, struct item *item, void *refptr)
+itemlist_callback_pps(struct itemlist *itemlist __unused, struct item *item, void *refptr)
 {
 	uint32_t *pps;
 	int ifno;
@@ -3331,7 +3331,7 @@ itemlist_callback_pps(struct itemlist *itemlist, struct item *item, void *refptr
 }
 
 static int
-itemlist_callback_startstop(struct itemlist *itemlist, struct item *item, void *refptr __unused)
+itemlist_callback_startstop(struct itemlist *itemlist __unused, struct item *item, void *refptr __unused)
 {
 	switch (item->id) {
 	case ITEMLIST_ID_IF0_START:
