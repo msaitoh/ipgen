@@ -2043,7 +2043,7 @@ broadcast_json_statistics(char *buf, unsigned int len)
 }
 
 static void
-sighandler_alrm(int signo)
+sighandler_alrm(int signo __unused)
 {
 	static uint32_t _nhz = 0;
 	uint32_t nhz;
@@ -2222,13 +2222,13 @@ quit(int fromsig)
 }
 
 static void
-sighandler_int(int signo)
+sighandler_int(int signo __unused)
 {
 	quit(true);
 }
 
 static void
-sighandler_tstp(int signo)
+sighandler_tstp(int signo __unused)
 {
 	itemlist_fini_term();
 
@@ -2240,7 +2240,7 @@ sighandler_tstp(int signo)
 }
 
 static void
-sighandler_cont(int signo)
+sighandler_cont(int signo __unused)
 {
 	signal(SIGTSTP, sighandler_tstp);
 }
