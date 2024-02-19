@@ -97,6 +97,12 @@ static int getifinfo(const char *, int *, uint8_t *);
 		}							\
 	} while (/* CONSTCOND */ 0)
 
+#ifdef STANDALONE_TEST
+#define	__testused
+#else
+#define	__testused	__unused
+#endif
+
 struct recvarp_arg {
 	struct in_addr src;
 	struct ether_addr src_eaddr;
@@ -337,7 +343,7 @@ main(int argc, char *argv[])
 #endif
 
 static int
-recv_arpreply(void *arg, unsigned char *buf, int buflen, const char *ifname)
+recv_arpreply(void *arg, unsigned char *buf, int buflen, const char *ifname __testused)
 {
 	struct arppkt_l2 *arppkt;
 	struct recvarp_arg *recvarparg;
@@ -364,7 +370,7 @@ recv_arpreply(void *arg, unsigned char *buf, int buflen, const char *ifname)
 }
 
 static int
-recv_nd(void *arg, unsigned char *buf, int buflen, const char *ifname)
+recv_nd(void *arg, unsigned char *buf, int buflen, const char *ifname __testused)
 {
 	struct ndpkt_l2 *ndpkt_l2;
 	struct recvnd_arg *recvndarg;
@@ -769,7 +775,7 @@ vlanize_malloc(int vlan, const char *pkt, unsigned int pktsize)
 }
 
 static void
-arpquery(int fd, const char *ifname, struct ether_addr *sha, int vlan, struct in_addr *src, struct in_addr *dst)
+arpquery(int fd, const char *ifname __testused, struct ether_addr *sha, int vlan, struct in_addr *src, struct in_addr *dst)
 {
 	struct arppkt_l2 aquery;
 	static const uint8_t eth_broadcast[ETHER_ADDR_LEN] =
@@ -808,7 +814,7 @@ arpquery(int fd, const char *ifname, struct ether_addr *sha, int vlan, struct in
 }
 
 static void
-ndsolicit(int fd, const char *ifname, struct ether_addr *sha, int vlan, struct in6_addr *src, struct in6_addr *dst)
+ndsolicit(int fd, const char *ifname __testused, struct ether_addr *sha, int vlan, struct in6_addr *src, struct in6_addr *dst)
 {
 	char pktbuf[LIBPKT_PKTBUFSIZE];
 	unsigned int pktlen;
