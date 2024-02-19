@@ -154,7 +154,7 @@ ax_wait_for_packets(struct ax_desc *ax_desc, struct ax_rx_handle *handle)
 {
 	struct ax_socket *axs = ax_desc->axs;
 	unsigned int npkts;
-	int ret;
+	unsigned int ret;
 
 	npkts = xsk_ring_cons__peek(&axs->rring, BATCH_SIZE, &handle->rring_idx);
 	if (npkts == 0) {
