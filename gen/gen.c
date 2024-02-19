@@ -411,11 +411,11 @@ static void interface_receive(int);
 static int interface_transmit(int);
 static void *tx_thread_main(void *);
 static void *rx_thread_main(void *);
-static void genscript_play(int unsigned);
+static void genscript_play(void);
 static void rfc2544_add_test(uint64_t, unsigned int);
 static void rfc2544_load_default_test(uint64_t);
 static void rfc2544_calc_param(uint64_t);
-static void rfc2544_test(int unsigned);
+static void rfc2544_test(void);
 static void control_init_items(struct itemlist *);
 static void *control_thread_main(void *);
 static void gentest_main(void);
@@ -2420,7 +2420,7 @@ rx_thread_main(void *arg)
 
 
 static void
-genscript_play(int unsigned n)
+genscript_play(void)
 {
 	static int nth_test = -1;
 	static int period_left = 0;
@@ -2880,7 +2880,7 @@ rfc2544_up_pps(void)
 }
 
 static void
-rfc2544_test(unsigned int n)
+rfc2544_test(void)
 {
 	struct rfc2544_work *work = &rfc2544_work[rfc2544_nthtest];
 	static rfc2544_state_t state = RFC2544_START;
@@ -3190,11 +3190,11 @@ control_interval(struct itemlist *itemlist)
 
 	if ((genscript != NULL) && (ninterval == 0)) {
 		/* call once every second */
-		genscript_play(ninterval);
+		genscript_play();
 	}
 
 	if (opt_rfc2544) {
-		rfc2544_test(ninterval);
+		rfc2544_test();
 	}
 
 	if (use_curses) {
