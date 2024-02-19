@@ -3499,7 +3499,7 @@ control_init_items(struct itemlist *itemlist)
 
 
 static void
-evt_accept_callback(evutil_socket_t fd, short event, void *arg)
+evt_accept_callback(evutil_socket_t fd, short event __unused, void *arg __unused)
 {
 	struct sockaddr_in sin;
 	socklen_t sinlen = sizeof(sin);
@@ -3515,7 +3515,7 @@ evt_accept_callback(evutil_socket_t fd, short event, void *arg)
 }
 
 static void
-evt_readable_stdin_callback(evutil_socket_t fd, short event, void *arg)
+evt_readable_stdin_callback(evutil_socket_t fd, short event __unused, void *arg)
 {
 	struct itemlist *itemlist;
 
@@ -3524,7 +3524,7 @@ evt_readable_stdin_callback(evutil_socket_t fd, short event, void *arg)
 }
 
 static void
-evt_timeout_callback(evutil_socket_t fd, short event, void *arg)
+evt_timeout_callback(evutil_socket_t fd __unused, short event __unused, void *arg)
 {
 	struct itemlist *itemlist;
 

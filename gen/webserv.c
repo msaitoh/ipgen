@@ -294,7 +294,7 @@ webserv_getclientnum(void)
 }
 
 static void
-evt_readable_client_callback(evutil_socket_t fd, short event, void *arg)
+evt_readable_client_callback(evutil_socket_t fd __unused, short event __unused, void *arg)
 {
 	struct webserv *web;
 
