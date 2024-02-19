@@ -62,6 +62,7 @@
 
 #include "libpkt/libpkt.h"
 #include "arpresolv.h"
+#include "compat.h"
 
 
 static int afpkt_read_and_exec(int (*)(void *, unsigned char *, int, const char *), void *, int, const char *, unsigned char *, int);
@@ -87,6 +88,12 @@ struct recvnd_arg {
 #define BUFSIZE	(1024 * 4)
 static unsigned char buf[BUFSIZE];
 static unsigned int buflen = BUFSIZE;
+
+#ifdef DEBUG
+#define __debugused
+#else
+#define __debugused	__unused
+#endif
 
 #ifdef DEBUG
 static int
@@ -234,7 +241,7 @@ main(int argc, char *argv[])
 #endif
 
 static int
-recv_arpreply(void *arg, unsigned char *buf, int buflen, const char *ifname)
+recv_arpreply(void *arg, unsigned char *buf, int buflen, const char *ifname __debugused)
 {
 	struct ether_arp *arp;
 	struct recvarp_arg *recvarparg;
@@ -256,7 +263,7 @@ recv_arpreply(void *arg, unsigned char *buf, int buflen, const char *ifname)
 }
 
 static int
-recv_nd(void *arg, unsigned char *buf, int buflen, const char *ifname)
+recv_nd(void *arg, unsigned char *buf, int buflen, const char *ifname __debugused)
 {
 	struct recvnd_arg *recvndarg;
 	struct icmp6_hdr *icmp6;
@@ -447,7 +454,7 @@ close_exit:
 }
 
 static int
-afpkt_open(const char *ifname, int promisc, unsigned int *buflen, int proto)
+afpkt_open(const char *ifname, int promisc __unused, unsigned int *buflen, int proto)
 {
 	int fd, rc;
 	struct sockaddr_ll sall;
@@ -471,7 +478,7 @@ afpkt_open(const char *ifname, int promisc, unsigned int *buflen, int proto)
 }
 
 static int
-afpkt_open_raw(const char *ifname, int promisc, unsigned int *buflen)
+afpkt_open_raw(const char *ifname, int promisc __unused, unsigned int *buflen)
 {
 	int fd, rc;
 	struct sockaddr_ll sall;
