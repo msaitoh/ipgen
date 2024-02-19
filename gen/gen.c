@@ -3539,7 +3539,7 @@ evt_timeout_callback(evutil_socket_t fd __unused, short event __unused, void *ar
 
 
 static void *
-control_thread_main(void *arg)
+control_thread_main(void *arg __unused)
 {
 	struct event ev_tty;
 	struct event ev_timer;
