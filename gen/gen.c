@@ -1067,9 +1067,9 @@ update_transmit_Mbps(int ifno)
 	struct interface *iface = &interface[ifno];
 
 	if (iface->pktsize < min_pktsize)
-		iface->pktsize  = min_pktsize;
+		iface->pktsize = min_pktsize;
 	if (iface->pktsize > 1500)
-		iface->pktsize  = 1500;
+		iface->pktsize = 1500;
 
 	if (iface->transmit_enable) {
 		iface->transmit_Mbps = calc_mbps(iface->pktsize, iface->transmit_pps);
@@ -2676,7 +2676,7 @@ rfc2544_showresult(void)
 	 */
 
 
-	 /* check link speed. 1G or 10G? */
+	/* check link speed. 1G or 10G? */
 	tmp = 0 ;
 	for (i = 0; i < rfc2544_ntest; i++) {
 		struct rfc2544_work *work = &rfc2544_work[i];
@@ -2976,8 +2976,8 @@ rfc2544_test(unsigned int n)
 		    work->pktsize,
 		    work->curpps,
 		    calc_mbps(work->pktsize, work->curpps),
-				calc_mbps(work->pktsize, work->minpps),
-				calc_mbps(work->pktsize, work->maxpps));
+		    calc_mbps(work->pktsize, work->minpps),
+		    calc_mbps(work->pktsize, work->maxpps));
 
 		memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
 		statetime.tv_sec += opt_rfc2544_warming_duration;
