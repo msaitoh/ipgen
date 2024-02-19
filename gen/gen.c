@@ -3223,7 +3223,7 @@ control_interval(struct itemlist *itemlist)
 }
 
 static int
-itemlist_callback_burst_steady(struct itemlist *itemlist, struct item *item, void *refptr)
+itemlist_callback_burst_steady(struct itemlist *itemlist, struct item *item, void *refptr __unused)
 {
 	switch (item->id) {
 	case ITEMLIST_ID_BUTTON_BURST:
@@ -3239,7 +3239,7 @@ itemlist_callback_burst_steady(struct itemlist *itemlist, struct item *item, voi
 }
 
 static int
-itemlist_callback_l1_l2(struct itemlist *itemlist, struct item *item, void *refptr)
+itemlist_callback_l1_l2(struct itemlist *itemlist, struct item *item, void *refptr __unused)
 {
 	switch (item->id) {
 	case ITEMLIST_ID_BUTTON_BPS_L1:
@@ -3331,7 +3331,7 @@ itemlist_callback_pps(struct itemlist *itemlist, struct item *item, void *refptr
 }
 
 static int
-itemlist_callback_startstop(struct itemlist *itemlist, struct item *item, void *refptr)
+itemlist_callback_startstop(struct itemlist *itemlist, struct item *item, void *refptr __unused)
 {
 	switch (item->id) {
 	case ITEMLIST_ID_IF0_START:
