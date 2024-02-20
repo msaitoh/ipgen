@@ -32,6 +32,7 @@
 #include <sys/ioctl.h>
 #include <curses.h>
 #include "item.h"
+#include "compat.h"
 
 #undef ITEM_DEBUG
 
@@ -42,12 +43,14 @@
 #define	REFRESH()	(void)0
 #define	PRINTF(format, args...)	printf(format, ## args)
 #define	BEEP()		(void)0
+#define	__debugused
 #else
 #define	CLEAR()		clear()
 #define	LOCATE(x, y)	move(y, x)
 #define	REFRESH()	refresh()
 #define	PRINTF(format, args...)	printw(format, ## args)
 #define	BEEP()		beep()
+#define	__debugused	__unused
 #endif
 
 #define	REVERSE()	standout()
@@ -64,7 +67,7 @@ struct itemlist {
 
 	/* line editor */
 	int linebuffer_x, linebuffer_y;
-	int linebuffer_cursor;
+	u_int linebuffer_cursor;
 	char linebuf[128];
 	union item_value save;
 };
@@ -147,7 +150,7 @@ itemlist_new(const char *template, struct item *items, int nitems)
 }
 
 static void
-item_dump(struct item *item)
+item_dump(struct item *item __debugused)
 {
 #ifdef ITEM_DEBUG
 	printf("<item=%p x=%d y=%d w=%d>\n",
@@ -660,7 +663,7 @@ static int
 itemlist_editor(struct itemlist *itemlist, int c)
 {
 	struct item *item;
-	int i;
+	u_int i;
 
 	item = &itemlist->items[itemlist->focus];
 
@@ -734,7 +737,7 @@ itemlist_editor(struct itemlist *itemlist, int c)
 		break;
 	default:
 		i = strlen(itemlist->linebuf);
-		if ((i >= item->w) || (i >= sizeof(itemlist->linebuf))) {
+		if ((i >= (u_int)item->w) || (i >= sizeof(itemlist->linebuf))) {
 			BEEP();
 		} else {
 			i = strlen(&itemlist->linebuf[itemlist->linebuffer_cursor]) + 1;

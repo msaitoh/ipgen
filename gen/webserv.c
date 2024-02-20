@@ -34,6 +34,7 @@
 #include <event.h>
 #include "webserv.h"
 #include "gen.h"
+#include "compat.h"
 
 static int webserv_output(struct webserv *, char *, int);
 static int webserv_reply_errcode(struct webserv *, int, const char *);
@@ -85,7 +86,7 @@ TAILQ_HEAD(, webserv) webserv_broadcastlist;
 unsigned int webserv_nclient;
 
 static int
-handler_index(struct webserv *web, const char *path, int argc, char *argv[])
+handler_index(struct webserv *web, const char *path __unused, int argc, char *argv[])
 {
 	char buf[1024 * 32];
 	FILE *fh;
@@ -132,7 +133,7 @@ handler_index(struct webserv *web, const char *path, int argc, char *argv[])
 }
 
 static int
-handler_stat(struct webserv *web, const char *path, int argc, char *argv[])
+handler_stat(struct webserv *web, const char *path __unused, int argc, char *argv[])
 {
 	char buf[1024];
 
@@ -153,7 +154,7 @@ handler_stat(struct webserv *web, const char *path, int argc, char *argv[])
 }
 
 static int
-handler_clear(struct webserv *web, const char *path, int argc, char *argv[])
+handler_clear(struct webserv *web, const char *path __unused, int argc __unused, char *argv[] __unused)
 {
 	statistics_clear();
 
@@ -164,7 +165,7 @@ handler_clear(struct webserv *web, const char *path, int argc, char *argv[])
 }
 
 static int
-handler_interface(struct webserv *web, const char *path, int argc, char *argv[])
+handler_interface(struct webserv *web, const char *path __unused, int argc, char *argv[])
 {
 	int ifno;
 	unsigned int n;
@@ -219,7 +220,7 @@ pathhandler(struct webserv *web, char *path)
 	struct urlhandler *match;
 	const char *p;
 	char *q;
-	int i;
+	u_int i;
 #define MAXARGV	32
 	char *argv[MAXARGV];
 
@@ -294,7 +295,7 @@ webserv_getclientnum(void)
 }
 
 static void
-evt_readable_client_callback(evutil_socket_t fd, short event, void *arg)
+evt_readable_client_callback(evutil_socket_t fd __unused, short event __unused, void *arg)
 {
 	struct webserv *web;
 

@@ -55,7 +55,7 @@ genscript_cmdname(unsigned int cmd)
 
 struct genscript *genscript_new(const char *);
 void genscript_delete(struct genscript *);
-struct genscript_item *genscript_get_item(struct genscript *, int);
+struct genscript_item *genscript_get_item(struct genscript *, u_int);
 
 /* for debug */
 void genscript_dump(struct genscript *);

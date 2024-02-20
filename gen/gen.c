@@ -127,9 +127,9 @@ char ipgen_version[] = "1.29";
 
 #define DISPLAY_UPDATE_HZ	20
 #define DEFAULT_PPS_HZ		1000
-int pps_hz = DEFAULT_PPS_HZ;
-int opt_npkt_sync = 0x7fffffff;
-int opt_nflow = 0;
+u_int pps_hz = DEFAULT_PPS_HZ;
+u_int opt_npkt_sync = 0x7fffffff;
+u_int opt_nflow = 0;
 
 bool use_curses = true;
 
@@ -190,7 +190,7 @@ int opt_flowsort = 0;
 int opt_flowdump = 0;
 char *opt_flowlist = NULL;
 
-int min_pktsize = 46;	/* not include ether-header. udp4:46, tcp4:46, udp6:54, tcp6:66 */
+u_int min_pktsize = 46;	/* not include ether-header. udp4:46, tcp4:46, udp6:54, tcp6:66 */
 
 int force_redraw_screen = 0;
 int do_quit = 0;
@@ -472,7 +472,7 @@ in_range(int num, int begin, int end)
 	return 1;
 }
 
-static inline int
+static inline u_int
 get_flowid_max(int ifno)
 {
 	return addresslist_get_tuplenum(interface[ifno].adrlist) - 1;
@@ -698,12 +698,13 @@ getdrvname(const char *ifname, char *drvname)
 static int
 getifunit(const char *ifname, char *drvname, unsigned long *unit)
 {
-	int i;
+	u_int i;
 
-	for (i = strlen(ifname) - 1; i >= 0; i--)
+	for (i = strlen(ifname) - 1; i > 0; i--)
 		if (!isdigit(*(ifname + i)))
 			break;
-	if ((i < 0) || (i == strlen(ifname) - 1))
+	if (((i == 0) && isdigit(ifname[0])) || /* All characters are digit */
+	    (i == strlen(ifname) - 1)) /* The last character is not digit */
 		return -1;
 
 	i++;
@@ -2042,7 +2043,7 @@ broadcast_json_statistics(char *buf, unsigned int len)
 }
 
 static void
-sighandler_alrm(int signo)
+sighandler_alrm(int signo __unused)
 {
 	static uint32_t _nhz = 0;
 	uint32_t nhz;
@@ -2221,13 +2222,13 @@ quit(int fromsig)
 }
 
 static void
-sighandler_int(int signo)
+sighandler_int(int signo __unused)
 {
 	quit(true);
 }
 
 static void
-sighandler_tstp(int signo)
+sighandler_tstp(int signo __unused)
 {
 	itemlist_fini_term();
 
@@ -2239,7 +2240,7 @@ sighandler_tstp(int signo)
 }
 
 static void
-sighandler_cont(int signo)
+sighandler_cont(int signo __unused)
 {
 	signal(SIGTSTP, sighandler_tstp);
 }
@@ -2422,7 +2423,7 @@ rx_thread_main(void *arg)
 static void
 genscript_play(int unsigned n)
 {
-	static int nth_test = -1;
+	static u_int nth_test = 0;
 	static int period_left = 0;
 	struct genscript_item *genitem;
 
@@ -2432,8 +2433,8 @@ genscript_play(int unsigned n)
 	period_left--;
 	if (period_left <= 0) {
 		do {
-			nth_test++;
 			genitem = genscript_get_item(genscript, nth_test);
+			nth_test++;
 			if (genitem == NULL) {
 				quit(false);
 				return;
@@ -2551,8 +2552,8 @@ struct rfc2544_work {
 
 #define RFC2544_MAXTESTNUM	64
 struct rfc2544_work rfc2544_work[RFC2544_MAXTESTNUM];
-static int rfc2544_ntest = 0;
-static int rfc2544_nthtest = 0;
+static u_int rfc2544_ntest = 0;
+static u_int rfc2544_nthtest = 0;
 
 typedef enum {
 	RFC2544_START,
@@ -2608,7 +2609,7 @@ rfc2544_load_default_test(uint64_t maxlinkspeed)
 static void
 rfc2544_calc_param(uint64_t maxlinkspeed)
 {
-	int i;
+	u_int i;
 
 	for (i = 0; i < rfc2544_ntest; i++) {
 		rfc2544_work[i].maxpps = maxlinkspeed / 8 / (rfc2544_work[i].pktsize + 18 + DEFAULT_IFG + DEFAULT_PREAMBLE);
@@ -2620,7 +2621,7 @@ rfc2544_showresult(void)
 {
 	double mbps, tmp;
 	unsigned int pps, linkspeed;
-	int i, j;
+	u_int i, j;
 
 	/*
 	 * [example]
@@ -2766,7 +2767,7 @@ void
 rfc2544_showresult_json(char *filename)
 {
 	double bps;
-	int i;
+	u_int i;
 	FILE *fp;
 
 	/*
@@ -3222,7 +3223,7 @@ control_interval(struct itemlist *itemlist)
 }
 
 static int
-itemlist_callback_burst_steady(struct itemlist *itemlist, struct item *item, void *refptr)
+itemlist_callback_burst_steady(struct itemlist *itemlist __unused, struct item *item, void *refptr __unused)
 {
 	switch (item->id) {
 	case ITEMLIST_ID_BUTTON_BURST:
@@ -3238,7 +3239,7 @@ itemlist_callback_burst_steady(struct itemlist *itemlist, struct item *item, voi
 }
 
 static int
-itemlist_callback_l1_l2(struct itemlist *itemlist, struct item *item, void *refptr)
+itemlist_callback_l1_l2(struct itemlist *itemlist, struct item *item, void *refptr __unused)
 {
 	switch (item->id) {
 	case ITEMLIST_ID_BUTTON_BPS_L1:
@@ -3263,7 +3264,7 @@ itemlist_callback_l1_l2(struct itemlist *itemlist, struct item *item, void *refp
 }
 
 static int
-itemlist_callback_nflow(struct itemlist *itemlist, struct item *item, void *refptr)
+itemlist_callback_nflow(struct itemlist *itemlist __unused, struct item *item __unused, void *refptr)
 {
 	int *nflow_test;
 
@@ -3278,7 +3279,7 @@ itemlist_callback_nflow(struct itemlist *itemlist, struct item *item, void *refp
 }
 
 static int
-itemlist_callback_pktsize(struct itemlist *itemlist, struct item *item, void *refptr)
+itemlist_callback_pktsize(struct itemlist *itemlist __unused, struct item *item, void *refptr)
 {
 	uint32_t *pktsize;
 	int ifno;
@@ -3306,7 +3307,7 @@ itemlist_callback_pktsize(struct itemlist *itemlist, struct item *item, void *re
 }
 
 static int
-itemlist_callback_pps(struct itemlist *itemlist, struct item *item, void *refptr)
+itemlist_callback_pps(struct itemlist *itemlist __unused, struct item *item, void *refptr)
 {
 	uint32_t *pps;
 	int ifno;
@@ -3330,7 +3331,7 @@ itemlist_callback_pps(struct itemlist *itemlist, struct item *item, void *refptr
 }
 
 static int
-itemlist_callback_startstop(struct itemlist *itemlist, struct item *item, void *refptr)
+itemlist_callback_startstop(struct itemlist *itemlist __unused, struct item *item, void *refptr __unused)
 {
 	switch (item->id) {
 	case ITEMLIST_ID_IF0_START:
@@ -3498,7 +3499,7 @@ control_init_items(struct itemlist *itemlist)
 
 
 static void
-evt_accept_callback(evutil_socket_t fd, short event, void *arg)
+evt_accept_callback(evutil_socket_t fd, short event __unused, void *arg __unused)
 {
 	struct sockaddr_in sin;
 	socklen_t sinlen = sizeof(sin);
@@ -3514,7 +3515,7 @@ evt_accept_callback(evutil_socket_t fd, short event, void *arg)
 }
 
 static void
-evt_readable_stdin_callback(evutil_socket_t fd, short event, void *arg)
+evt_readable_stdin_callback(evutil_socket_t fd, short event __unused, void *arg)
 {
 	struct itemlist *itemlist;
 
@@ -3523,7 +3524,7 @@ evt_readable_stdin_callback(evutil_socket_t fd, short event, void *arg)
 }
 
 static void
-evt_timeout_callback(evutil_socket_t fd, short event, void *arg)
+evt_timeout_callback(evutil_socket_t fd __unused, short event __unused, void *arg)
 {
 	struct itemlist *itemlist;
 
@@ -3538,7 +3539,7 @@ evt_timeout_callback(evutil_socket_t fd, short event, void *arg)
 
 
 static void *
-control_thread_main(void *arg)
+control_thread_main(void *arg __unused)
 {
 	struct event ev_tty;
 	struct event ev_timer;
