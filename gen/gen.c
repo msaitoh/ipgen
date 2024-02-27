@@ -2940,7 +2940,6 @@ rfc2544_test(void)
 		break;
 
 	case RFC2544_RESETTING:
-		statistics_clear();
 		if (timespeccmp(&currenttime_main, &statetime, <))
 			break;
 
