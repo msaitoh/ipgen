@@ -2991,7 +2991,6 @@ rfc2544_test(void)
 		if (timespeccmp(&currenttime_main, &statetime, <))
 			break;
 
-		statistics_clear();
 		state = RFC2544_MEASURING0;
 		break;
 
@@ -3012,6 +3011,7 @@ rfc2544_test(void)
 			    calc_mbps(work->pktsize, work->curpps));
 		}
 
+		statistics_clear();
 		memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
 		statetime.tv_sec += opt_rfc2544_trial_duration;
 		state = RFC2544_MEASURING;
