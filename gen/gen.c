@@ -2972,8 +2972,8 @@ rfc2544_test(void)
 
 	case RFC2544_WARMING0:
 		/* enable transmit */
-		transmit_set(1, 1);
 		statistics_clear();
+		transmit_set(1, 1);
 		logging("warming: %d sec, pktsize %u, pps %u, %.2fMbps [%.2fMbps:%.2fMbps]",
 		    opt_rfc2544_warming_duration,
 		    work->pktsize,
