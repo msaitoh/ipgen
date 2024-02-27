@@ -2915,6 +2915,7 @@ rfc2544_test(void)
 		break;
 
 	case RFC2544_RESETTING0:
+		/* disable transmit */
 		transmit_set(1, 0);
 		statistics_clear();
 
@@ -2953,6 +2954,7 @@ rfc2544_test(void)
 		break;
 
 	case RFC2544_INTERVAL0:
+		/* disable transmit */
 		transmit_set(1, 0);
 		statistics_clear();
 		memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
@@ -2970,6 +2972,7 @@ rfc2544_test(void)
 		break;
 
 	case RFC2544_WARMING0:
+		/* enable transmit */
 		transmit_set(1, 1);
 		statistics_clear();
 		logging("warming: %d sec, pktsize %u, pps %u, %.2fMbps [%.2fMbps:%.2fMbps]",
@@ -3078,6 +3081,7 @@ rfc2544_test(void)
 			measure_done = rfc2544_down_pps();
 			if (!measure_done) {
 				setpps(1, work->curpps);
+				/* disable transmit */
 				transmit_set(1, 0);
 				statistics_clear();
 				memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
@@ -3104,6 +3108,7 @@ rfc2544_test(void)
 		break;
 
 	case RFC2544_DONE0:
+		/* disable transmit */
 		transmit_set(1, 0);
 		state = RFC2544_DONE;
 		break;
