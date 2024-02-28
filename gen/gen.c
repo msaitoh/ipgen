@@ -2304,7 +2304,7 @@ usage(void)
 	       "	-S <script>			autotest script\n"
 	       "	-f				full-duplex mode\n"
 	       "	-t <time>			send packets specified seconds and quit\n"
-	       "	--fail-if-dropped		Program exits with failure if the receiver drops any packets\n"
+	       "	--fail-if-dropped		return exit status with failure if the receiver drops any packets while the last trial\n"
 	       "	-L <log>			output statistics to logfile\n"
 	       "	-v				verbose\n"
 	       "\n"
