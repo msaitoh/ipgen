@@ -2271,7 +2271,7 @@ usage(void)
 	       "\n"
 	       "	-s <size>			specify pktsize (IPv4:46-1500, IPv6:tcp:54-1500)\n"
 	       "	-p <pps>			specify pps\n"
-	       "	-t <time>			time in seconds to send packets\n"
+	       "	-t <time>			send packets specified seconds and quit\n"
 	       "	-f				full-duplex mode\n"
 	       "\n"
 	       "	-v				verbose\n"
