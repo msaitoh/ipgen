@@ -2271,16 +2271,12 @@ usage(void)
 	       "	-p <pps>			specify pps\n"
 	       "	-t <time>			send packets specified seconds and quit\n"
 	       "	-f				full-duplex mode\n"
-	       "\n"
-	       "	--tcp				generate TCP packet\n"
-	       "	--udp				generate UDP packet (default)\n"
-	       "	--fragment			generate fragment packet\n"
 	       "\n"	/* L1 or L2 */
 	       "	--ipg				adapt IPG (Inter Packet Gap)\n"
 	       "	--burst				don't set IPG (default)\n"
 	       "	--l1-bps			include IFG/PREAMBLE/FCS for bps calculation\n"
 	       "	--l2-bps			don't include IFG/PREAMBLE for bps calculation (default)\n"
-	       "\n"
+	       "\n"	/* L3 */
 	       "	--allnet			use destination address incrementally\n"
 	       "	--saddr <begin>[-<end>]		use source address range (default: TX interface address)\n"
 	       "	--daddr <begin>[-<end>]		use destination address range (default: RX interface address)\n"
@@ -2290,7 +2286,11 @@ usage(void)
 	       "	--flowsort			sort flow list\n"
 	       "	--flowdump			dump flow list\n"
 	       "	-F <nflow>			limit <nflow>\n"
-	       "\n"
+	       "\n"	/* L4 */
+	       "	--tcp				generate TCP packet\n"
+	       "	--udp				generate UDP packet (default)\n"
+	       "	--fragment			generate fragment packet\n"
+	       "\n"	/* RFC 2544 */
 	       "	--rfc2544			rfc2544 test mode\n"
 	       "	--rfc2544-slowstart		increase pps step-by-step (default: binary-search)\n"
 	       "	--rfc2544-tolerable-error-rate <percent>\n"
