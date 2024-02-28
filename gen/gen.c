@@ -2307,11 +2307,10 @@ usage(void)
 	       "	--fail-if-dropped		return exit status with failure if the receiver drops any packets while the last trial\n"
 	       "	-L <log>			output statistics to logfile\n"
 	       "	-v				verbose\n"
-	       "\n"
+	       "\n"	/* Debug */
 	       "	-X				packet generation benchmark\n"
 	       "	-XX				packet generation benchmark with memcpy\n"
 	       "	-XXX				packet generation benchmark with memcpy and cksum\n"
-	       "\n"
 	       "	-D <file>			debug. dump all generated packets to <file> as tcpdump file format\n"
 	       "	-d				debug. dump unknown packet\n"
 	);
