@@ -2251,8 +2251,8 @@ usage(void)
 	fprintf(stderr,
 	       "\n"
 	       "usage: ipgen [options]\n"
-	       "	[-V <vlanid>]\n"
-	       "	[-P]\n"
+	       "	[-V <vlanid>]			use VLAN\n"
+	       "	[-P]				use PPPoE\n"
 	       "	-R <ifname>,<gateway-address>[,<own-address>[/<prefix>]]\n"
 	       "					set RX interface\n"
 	       "\n"
