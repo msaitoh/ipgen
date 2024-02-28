@@ -207,6 +207,7 @@ function StartConnect(event, url)
 			drawPoints: true,
 			labels: ['Time', 'RX1', 'RX2'],
 			ylabel: 'drops',
+			logscale: true,
 //			animateZoomes: true,
 //			showRangeSelector: true,
 			fillGraph: true,
