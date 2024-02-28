@@ -107,6 +107,10 @@
 #define	PORT_DEFAULT		9	/* discard port */
 #define MAXFLOWNUM		(1024 * 1024)
 
+/* Number of seconds to wait after interface_open(). */
+#define LINK_WAIT_SECONDS_AFTER_IFOPEN_DEFAULT	3
+unsigned int link_wait_seconds_after_ifopen = LINK_WAIT_SECONDS_AFTER_IFOPEN_DEFAULT;
+
 #ifdef DEBUG
 FILE *debugfh;
 #endif
@@ -2255,6 +2259,7 @@ usage(void)
 	       "					set TX interface\n"
 	       "\n"
 	       "	-H <Hz>				specify control Hz (default: 1000)\n"
+	       "	--link-wait <sec>		wait specified seconds for link status become stable (0-10, default: 3)\n"
 	       "	-n <npkt>			sync transmit per <npkt>\n"
 	       "	--ipg				adapt IPG (Inter Packet Gap)\n"
 	       "	--burst				don't set IPG (default)\n"
@@ -3639,6 +3644,7 @@ gentest_main(void)
 static struct option longopts[] = {
 	{	"ipg",				no_argument,		0,	0	},
 	{	"burst",			no_argument,		0,	0	},
+	{	"link-wait",			required_argument,	0,	0	},
 	{	"l1-bps",			no_argument,		0,	0,	},
 	{	"l2-bps",			no_argument,		0,	0,	},
 	{	"allnet",			no_argument,		0,	0	},
@@ -4124,6 +4130,12 @@ main(int argc, char *argv[])
 				opt_ipg = 1;
 			} else if (strcmp(longopts[optidx].name, "burst") == 0) {
 				opt_ipg = 0;
+			} else if (strcmp(longopts[optidx].name, "link-wait") == 0) {
+				link_wait_seconds_after_ifopen = strtoul(optarg, (char **)NULL, 10);
+				if (link_wait_seconds_after_ifopen > 10) {
+					fprintf(stderr, "illegal link wait time: %s\n", optarg);
+					exit(1);
+				}
 			} else if (strcmp(longopts[optidx].name, "l1-bps") == 0) {
 				opt_bps_include_preamble = 1;
 			} else if (strcmp(longopts[optidx].name, "l2-bps") == 0) {
@@ -4543,9 +4555,9 @@ main(int argc, char *argv[])
 	 * interface_open() usually causes link down. The link down
 	 * may be delayed and/or flap. The link down might be occurred
 	 * after the following interface_wait_linkup() check.
-	 * To avoid this problem, wait 3 seconds.
+	 * To avoid this problem, wait link_wait_seconds_after_ifopen seconds.
 	 */
-	sleep(3);
+	sleep(link_wait_seconds_after_ifopen);
 
 	if (!opt_rxonly)
 		interface_wait_linkup(ifname[1]);	/* TX */
