@@ -2263,14 +2263,9 @@ usage(void)
 	       "\n"
 	       "	-H <Hz>				specify control Hz (default: 1000)\n"
 	       "	-n <npkt>			sync transmit per <npkt>\n"
-	       "\n"
-	       "	-S <script>			autotest script\n"
-	       "	-L <log>			output statistics to logfile\n"
-	       "\n"
+	       "\n"	/* size and speed */
 	       "	-s <size>			specify pktsize (IPv4:46-1500, IPv6:tcp:54-1500)\n"
 	       "	-p <pps>			specify pps\n"
-	       "	-t <time>			send packets specified seconds and quit\n"
-	       "	-f				full-duplex mode\n"
 	       "\n"	/* L1 or L2 */
 	       "	--ipg				adapt IPG (Inter Packet Gap)\n"
 	       "	--burst				don't set IPG (default)\n"
@@ -2304,9 +2299,13 @@ usage(void)
 	       "	--rfc2544-interval <sec>	interval time between rfc2544 trial (default: 0)\n"
 	       "	--rfc2544-warming-duration <sec>	warming time before rfc2544 trial (1-60, default: 1)\n"
 	       "	--rfc2544-no-early-finish	complete each trial without finishing early\n"
-	       "\n"
+	       "\n"	/* Operation control */
 	       "	--nocurses			no curses mode\n"
-	       "\n"
+	       "	-S <script>			autotest script\n"
+	       "	-f				full-duplex mode\n"
+	       "	-t <time>			send packets specified seconds and quit\n"
+	       "	--fail-if-dropped		Program exits with failure if the receiver drops any packets\n"
+	       "	-L <log>			output statistics to logfile\n"
 	       "	-v				verbose\n"
 	       "\n"
 	       "	-X				packet generation benchmark\n"
@@ -2315,8 +2314,6 @@ usage(void)
 	       "\n"
 	       "	-D <file>			debug. dump all generated packets to <file> as tcpdump file format\n"
 	       "	-d				debug. dump unknown packet\n"
-	       "\n"
-	       "	--fail-if-dropped		Program exits with failure if the receiver drops any packets\n"
 	);
 
 	exit(1);
