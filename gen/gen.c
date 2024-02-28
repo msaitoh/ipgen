@@ -4543,9 +4543,9 @@ main(int argc, char *argv[])
 	 * interface_open() usually causes link down. The link down
 	 * may be delayed and/or flap. The link down might be occurred
 	 * after the following interface_wait_linkup() check.
-	 * To avoid this problem, wait 2 seconds.
+	 * To avoid this problem, wait 3 seconds.
 	 */
-	sleep(2);
+	sleep(3);
 
 	if (!opt_rxonly)
 		interface_wait_linkup(ifname[1]);	/* TX */
