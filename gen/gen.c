@@ -2305,7 +2305,7 @@ usage(void)
 	       "	-f				full-duplex mode\n"
 	       "	-t <time>			send packets specified seconds and quit\n"
 	       "	--fail-if-dropped		return exit status with failure if the receiver drops any packets while the last trial\n"
-	       "	-L <log>			output statistics to logfile\n"
+	       "	-L <log>			output statistics as json file format\n"
 	       "	-v				verbose\n"
 	       "\n"	/* Debug */
 	       "	-X				packet generation benchmark\n"
