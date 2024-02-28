@@ -239,7 +239,6 @@ function StartConnect(event, url)
 //			animateZoomes: true,
 //			showRangeSelector: true,
 			fillGraph: true,
-			valueRange: [64,1600],
 			rangeSelectorHeight: 30,
 			rangeSelectorPlotStrokeColor: 'yellow',
 			rangeSelectorPlotFilllColor: 'lightyellow'
