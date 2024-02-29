@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Ryo Shimizu <ryo@iij.ad.jp>
+ * Copyright (c) 2022 Ryo Shimizu
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

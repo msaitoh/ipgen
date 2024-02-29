@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Ryo Shimizu <ryo@nerv.org>
+ * Copyright (c) 2015 Ryo Shimizu
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
