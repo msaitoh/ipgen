@@ -240,13 +240,11 @@ calc_mbps(unsigned int pktsize, unsigned long pps)
 	return _CALC_MBPS(pktsize, pps, opt_bps_include_preamble ? CALC_L1 : CALC_L2);
 }
 
-#if 0 /* Not used yet */
 static inline double
 calc_mbps_l1(unsigned int pktsize, unsigned long pps)
 {
 	return _CALC_MBPS(pktsize, pps, CALC_L1);
 }
-#endif
 
 /* sizeof(struct seqdata) = 6 bytes */
 struct seqdata {
@@ -2694,7 +2692,7 @@ rfc2544_showresult(void)
 	tmp = 0 ;
 	for (i = 0; i < rfc2544_ntest; i++) {
 		struct rfc2544_work *work = &rfc2544_work[i];
-		mbps = calc_mbps(work->pktsize, work->curpps);
+		mbps = calc_mbps_l1(work->pktsize, work->curpps);
 		if (tmp < mbps)
 			tmp = mbps;
 	}
