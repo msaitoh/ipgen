@@ -211,29 +211,42 @@ const uint8_t eth_zero[6] = { 0, 0, 0, 0, 0, 0 };
 
 char bps_desc[32];
 
+#define CALC_L1 1
+#define CALC_L2 0
+
 #define	PKTSIZE2FRAMESIZE(x, gap)	(DEFAULT_PREAMBLE + (x) + FCS + (gap))
-#define	_CALC_BPS(pktsize, pps)	\
-	((PKTSIZE2FRAMESIZE((pktsize) + ETHHDRSIZE, DEFAULT_IFG) * (pps)) * 8.0)
-#define	_CALC_MBPS(pktsize, pps)	\
-	(_CALC_BPS(pktsize, pps) / 1000.0 / 1000.0)
+#define	_CALC_BPS(pktsize, pps, l1l2)											\
+	(((pktsize) + ETHHDRSIZE + FCS + (((l1l2) == CALC_L1) ? DEFAULT_PREAMBLE + DEFAULT_IFG : 0)) * (pps) * 8.0)
+#define	_CALC_MBPS(pktsize, pps, l1l2)			\
+	(_CALC_BPS(pktsize, pps, l1l2) / 1000.0 / 1000.0)
 
 static inline double
 calc_bps(unsigned int pktsize, unsigned long pps)
 {
-	if (opt_bps_include_preamble)
-		return _CALC_BPS(pktsize, pps);
-
-	/* don't include ifg/preamble/fcs */
-	return (pktsize + ETHHDRSIZE + FCS) * pps * 8.0;
+	return _CALC_BPS(pktsize, pps, opt_bps_include_preamble ? CALC_L1 : CALC_L2);
 }
+
+#if 0 /* Not used yet */
+static inline double
+calc_bps_l1(unsigned int pktsize, unsigned long pps)
+{
+	return _CALC_BPS(pktsize, pps, CALC_L1);
+}
+#endif
 
 static inline double
 calc_mbps(unsigned int pktsize, unsigned long pps)
 {
-	if (opt_bps_include_preamble)
-		return _CALC_MBPS(pktsize, pps);
-	return calc_bps(pktsize, pps) / 1000.0 / 1000.0;
+	return _CALC_MBPS(pktsize, pps, opt_bps_include_preamble ? CALC_L1 : CALC_L2);
 }
+
+#if 0 /* Not used yet */
+static inline double
+calc_mbps_l1(unsigned int pktsize, unsigned long pps)
+{
+	return _CALC_MBPS(pktsize, pps, CALC_L1);
+}
+#endif
 
 /* sizeof(struct seqdata) = 6 bytes */
 struct seqdata {
