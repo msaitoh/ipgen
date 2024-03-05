@@ -103,7 +103,7 @@ function LoopConnection(pps_g, pps_data, drop_g, drop_data, bps_g, bps_data, pkt
 
 			for (var i = 0; i < 2; i++) {
 				log('log',
-				    sprintf("%s pktsize:%d TXbps:%d RXbps:%d TXpps:%d RXpps:%d\n",
+				    sprintf("%s pktsize:%4d TXbps:%12d RXbps:%12d TXpps:%10d RXpps:%10d\n",
 				        json.statistics[i].interface,
 				        json.statistics[i].packetsize,
 				        json.statistics[i].TXbps, json.statistics[i].RXbps,
@@ -207,6 +207,7 @@ function StartConnect(event, url)
 			drawPoints: true,
 			labels: ['Time', 'RX1', 'RX2'],
 			ylabel: 'drops',
+			logscale: true,
 //			animateZoomes: true,
 //			showRangeSelector: true,
 			fillGraph: true,
@@ -238,7 +239,6 @@ function StartConnect(event, url)
 //			animateZoomes: true,
 //			showRangeSelector: true,
 			fillGraph: true,
-			valueRange: [64,1600],
 			rangeSelectorHeight: 30,
 			rangeSelectorPlotStrokeColor: 'yellow',
 			rangeSelectorPlotFilllColor: 'lightyellow'
