@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Ryo Shimizu <ryo@nerv.org>
+ * Copyright (c) 2013 Ryo Shimizu
  * Copyright (c) 2021 Ryota Ozaki <ozaki.ryota@gmail.com>
  * All rights reserved.
  *
