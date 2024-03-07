@@ -436,7 +436,7 @@ interface_get_baudrate(const char *ifname)
 	rc = ioctl(s, SIOCETHTOOL, &ifr);
 	if (rc != 0) {
 		close(s);
-		warn("ioctl(ETHTOOL_GLINK) failed\n");
+		warn("ioctl(ETHTOOL_GLINK) failed");
 		return 0;
 	}
 	ec.cmd = ETHTOOL_GSET;
@@ -444,12 +444,12 @@ interface_get_baudrate(const char *ifname)
 	rc = ioctl(s, SIOCETHTOOL, &ifr);
 	close(s);
 	if (rc != 0) {
-		warn("ioctl(ETHTOOL_GSET) failed\n");
+		warn("ioctl(ETHTOOL_GSET) failed");
 		return 0;
 	}
 	uint32_t speed = ethtool_cmd_speed(&ec);
-	if (speed == 0) {
-		warn("linkspeed unknown\n");
+	if (speed == 0 || speed == (uint16_t)(-1) || speed == (uint32_t)(-1)) {
+		warnx("linkspeed unknown");
 		return 0;
 	}
 	return IF_Mbps((uint64_t)speed);
