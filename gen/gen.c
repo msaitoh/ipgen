@@ -107,6 +107,11 @@
 #define	PORT_DEFAULT		9	/* discard port */
 #define MAXFLOWNUM		(1024 * 1024)
 
+/* For old FreeBSD */
+#if !defined(pthread_setname_np) && defined(pthread_set_name_np)
+#define pthread_setname_np	pthread_set_name_np
+#endif
+
 #ifdef DEBUG
 FILE *debugfh;
 #endif
@@ -4640,15 +4645,13 @@ main(int argc, char *argv[])
 	if (!opt_txonly) {
 		pthread_create(&txthread0, NULL, tx_thread_main, &ifnum[0]);
 		pthread_create(&rxthread0, NULL, rx_thread_main, &ifnum[0]);
-#ifdef pthread_set_name_np
 		{
 			char buf[128];
 			snprintf(buf, sizeof(buf), "%s-tx", interface[0].ifname);
-			pthread_set_name_np(txthread0, buf);
+			pthread_setname_np(txthread0, buf);
 			snprintf(buf, sizeof(buf), "%s-rx", interface[0].ifname);
-			pthread_set_name_np(rxthread0, buf);
+			pthread_setname_np(rxthread0, buf);
 		}
-#endif
 #ifdef __linux__
 		int error, i;
 		long nprocs = sysconf(_SC_NPROCESSORS_ONLN);
@@ -4670,15 +4673,13 @@ main(int argc, char *argv[])
 	if (!opt_rxonly) {
 		pthread_create(&txthread1, NULL, tx_thread_main, &ifnum[1]);
 		pthread_create(&rxthread1, NULL, rx_thread_main, &ifnum[1]);
-#ifdef pthread_set_name_np
 		{
 			char buf[128];
 			snprintf(buf, sizeof(buf), "%s-tx", interface[1].ifname);
-			pthread_set_name_np(txthread1, buf);
+			pthread_setname_np(txthread1, buf);
 			snprintf(buf, sizeof(buf), "%s-rx", interface[1].ifname);
-			pthread_set_name_np(rxthread1, buf);
+			pthread_setname_np(rxthread1, buf);
 		}
-#endif
 #ifdef __linux__
 		int error, i;
 		long nprocs = sysconf(_SC_NPROCESSORS_ONLN);
