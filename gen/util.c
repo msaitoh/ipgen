@@ -229,11 +229,10 @@ interface_is_active(const char *ifname)
 	char buf[256];
 #ifdef __linux__
 	active = 0;
-	snprintf(buf, sizeof(buf), "ip link show up dev %s", ifname);
+	snprintf(buf, sizeof(buf), "ip link show %s", ifname);
 	fp = popen(buf, "r");
 	fgets(buf, sizeof(buf), fp);
-	/* If the interface is down, it returns empty string */
-	if (strnlen(buf, sizeof(buf) - 1) != 0)
+	if (strstr(buf, "state UP") != NULL)
 		active = 1;
 	pclose(fp);
 #else
