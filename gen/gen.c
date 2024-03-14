@@ -2483,7 +2483,7 @@ genscript_play(void)
 }
 
 static void
-control_tty_handler(int fd, struct itemlist *itemlist)
+control_tty_handler(struct itemlist *itemlist)
 {
 #ifdef __FreeBSD__
 	sigset_t sigalrmset;
@@ -3535,12 +3535,12 @@ evt_accept_callback(evutil_socket_t fd, short event __unused, void *arg __unused
 }
 
 static void
-evt_readable_stdin_callback(evutil_socket_t fd, short event __unused, void *arg)
+evt_readable_stdin_callback(evutil_socket_t fd __unused, short event __unused, void *arg)
 {
 	struct itemlist *itemlist;
 
 	itemlist = (struct itemlist *)arg;
-	control_tty_handler(fd, itemlist);	/* fd = STDIN */
+	control_tty_handler(itemlist);
 }
 
 static void
