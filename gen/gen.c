@@ -3036,6 +3036,7 @@ rfc2544_test(void)
 		if ((interface[0].stats.rx != 0) &&
 		    (((interface[0].stats.rx_seqdrop * 100.0) / interface[0].stats.rx) > opt_rfc2544_tolerable_error_rate)) {
 
+			/* (A) Got packets and high error rate. Down PPS. */
 			do_down_pps = 1;
 			DEBUGLOG("RFC2544: pktsize=%d, pps=%d (%.2fMbps), rx=%"PRIu64", drop=%"PRIu64", drop-rate=%.3f\n",
 			    work->pktsize,
@@ -3045,9 +3046,9 @@ rfc2544_test(void)
 			    interface[0].stats.rx_seqdrop,
 			    interface[0].stats.rx_seqdrop * 100.0 / interface[0].stats.rx);
 			DEBUGLOG("RFC2544: down pps\n");
-
 		} else if (timespeccmp(&currenttime_main, &statetime, >)) {
 			if (interface[0].stats.rx == 0) {
+				/* (B) No packet. Down PPS. */
 				do_down_pps = 1;
 				DEBUGLOG("RFC2544: pktsize=%d, pps=%d, no packet received. down pps\n",
 				    work->pktsize,
@@ -3055,16 +3056,19 @@ rfc2544_test(void)
 			} else {
 				/* pause frame workaround */
 				const uint64_t pause_detect_threshold = 10000; /* XXXX */
+
 				DEBUGLOG("RFC2544: tx_underrun=%lu, pause_detect_threshold=%lu, tx=%lu, tolerable_error_rate=%.4f\n",
 				    interface[1].stats.tx_underrun, pause_detect_threshold, interface[1].stats.tx, opt_rfc2544_tolerable_error_rate);
 				if (interface[1].stats.tx_underrun > pause_detect_threshold
 				    && (((interface[1].stats.tx_underrun * 100.0) / interface[1].stats.tx)
 					> opt_rfc2544_tolerable_error_rate)) {
+					/* (C) High underrun count. Down pps. */
 					do_down_pps = 1;
 					DEBUGLOG("RFC2544: pktsize=%d, pps=%d, pause frame workaround. down pps\n",
 					    work->pktsize,
 					    work->curpps);
 				} else if ((interface[0].stats.rx * 100.0 / interface[1].stats.tx) < opt_rfc2544_tolerable_error_rate) {
+					/* (D) high drop rate. Down pps. */
 					do_down_pps = 1;
 					DEBUGLOG("RFC2544: pktsize=%d, pps=%d, tx=%"PRIu64", rx=%"PRIu64", enough packets not received. down pps\n",
 					    work->pktsize,
@@ -3074,18 +3078,22 @@ rfc2544_test(void)
 					/* no drop. OK! */
 					measure_done = rfc2544_up_pps();
 					if (!measure_done) {
+						/* (E) OK. Up pps. */
 						DEBUGLOG("RFC2544: pktsize=%d, pps=%d, no drop. up pps\n",
 						    work->pktsize,
 						    work->curpps);
 
 						setpps(1, work->curpps);
 						state = opt_rfc2544_interval > 0 ? RFC2544_INTERVAL0 : RFC2544_WARMING0;
+					} else {
+						/* (F) Finished. */
 					}
 				}
 			}
 		}
 
 		if (do_down_pps) {
+			/* Case A, B, C and D. */
 			measure_done = rfc2544_down_pps();
 			if (!measure_done) {
 				setpps(1, work->curpps);
@@ -3099,6 +3107,7 @@ rfc2544_test(void)
 		}
 
 		if (measure_done) {
+			/* Case F. */
 			logging("done. pktsize %d, maximum pps %d (%.2fMbps)",
 			    work->pktsize,
 			    work->curpps,
