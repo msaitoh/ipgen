@@ -1181,13 +1181,16 @@ interface_wait_linkupdown(const char *ifname, const int up, const int sec)
 		if (interface_is_active(ifname) == up)
 			break;
 		usleep(500000);
-		printf_verbose(".");
+		if (verbose)
+			printf(".");
 		fflush(stdout);
 	}
 	if (i >= 0) {
-		printf_verbose(" OK\n");
+		if (verbose)
+			printf(" OK\n");
 	} else {
-		printf_verbose(" giving up\n");
+		if (verbose)
+			printf(" giving up\n");
 	}
 	fflush(stdout);
 }
