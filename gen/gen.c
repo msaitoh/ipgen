@@ -3097,7 +3097,6 @@ rfc2544_test(void)
 			    interface[0].stats.rx_seqdrop,
 			    interface[0].stats.rx_seqdrop * 100.0 / interface[0].stats.rx);
 			DEBUGLOG("RFC2544: down pps\n");
-			/* (A) got packets and high error rate. down PPS */
 
 		} else if (timespeccmp(&currenttime_main, &statetime, >)) {
 			if (interface[0].stats.rx == 0) {
@@ -3106,7 +3105,6 @@ rfc2544_test(void)
 				DEBUGLOG("RFC2544: pktsize=%d, pps=%d, no packet received. down pps\n",
 				    work->pktsize,
 				    work->curpps);
-				/* (B) No packet. down PPS */
 			} else {
 				/* pause frame workaround */
 				const uint64_t pause_detect_threshold = 10000; /* XXXX */
@@ -3121,7 +3119,6 @@ rfc2544_test(void)
 					DEBUGLOG("RFC2544: pktsize=%d, pps=%d, pause frame workaround. down pps\n",
 					    work->pktsize,
 					    work->curpps);
-					/* (C) high underrun count. down pps */
 				} else if ((interface[0].stats.rx * 100.0 / interface[1].stats.tx) < opt_rfc2544_tolerable_error_rate) {
 					/* (D) high drop rate. Down pps. */
 					do_down_pps = 1;
@@ -3129,7 +3126,6 @@ rfc2544_test(void)
 					    work->pktsize,
 					    work->curpps,
 					    interface[1].stats.tx, interface[0].stats.rx);
-					/* (D) high drop rate. down pps */
 				} else {
 					/* no drop. OK! */
 					measure_done = rfc2544_up_pps();
@@ -3144,7 +3140,6 @@ rfc2544_test(void)
 					} else {
 						/* (F) Finished. */
 					}
-					/* (E) OK. down pps */
 				}
 			}
 		}
