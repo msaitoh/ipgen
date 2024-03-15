@@ -3097,7 +3097,6 @@ rfc2544_test(void)
 			    interface[0].stats.rx_seqdrop,
 			    interface[0].stats.rx_seqdrop * 100.0 / interface[0].stats.rx);
 			DEBUGLOG("RFC2544: down pps\n");
-
 		} else if (timespeccmp(&currenttime_main, &statetime, >)) {
 			if (interface[0].stats.rx == 0) {
 				/* (B) No packet. Down PPS. */
