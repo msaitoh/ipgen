@@ -1310,10 +1310,7 @@ interface_open(int ifno)
 		exit(1);
 	}
 
-#if 0
-	DEBUGLOG("%s: wait 10s\n", __func__);
-	sleep(10);
-#endif
+
 	nifp = iface->nm_desc->nifp;
 	txring = NETMAP_TXRING(nifp, 0);
 	rxring = NETMAP_RXRING(nifp, 0);
@@ -4618,7 +4615,6 @@ main(int argc, char *argv[])
 		    (unsigned long)calc_bps(interface[0].pktsize, interface[0].transmit_pps));
 	}
 
-	DEBUGLOG("goto interface open\n");
 	/*
 	 * Initialize packet transmission infrastructure
 	 */
@@ -4626,13 +4622,6 @@ main(int argc, char *argv[])
 		interface_open(1);	/* TX */
 	if (!opt_txonly)
 		interface_open(0);	/* RX */
-
-#if 1
-	DEBUGLOG("end of interface open\n");
-
-	sleep(3);
-	DEBUGLOG("goto interface wait linkup\n");
-#endif
 
 	/* First, make sure interfaces down */
 	if (!opt_txonly)
@@ -4646,7 +4635,6 @@ main(int argc, char *argv[])
 	if (!opt_txonly)
 		interface_wait_linkup(ifname[0]);	/* RX */
 
-	DEBUGLOG("end of interface wait linkup\n");
 	for (i = 0; i < 2; i++) {
 		char inetbuf1[INET6_ADDRSTRLEN];
 		char inetbuf2[INET6_ADDRSTRLEN];
