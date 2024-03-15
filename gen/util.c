@@ -485,9 +485,6 @@ interface_get_baudrate(const char *ifname)
 #endif
 }
 
-
-extern bool use_curses;
-
 void
 interface_promisc(const char *ifname, int enable, int *old)
 {

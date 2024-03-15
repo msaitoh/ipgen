@@ -58,6 +58,7 @@
 #define _GEN_H_
 
 #include <time.h>
+#include <stdbool.h>
 
 #ifndef timespeccmp
 #define	timespeccmp(tvp, uvp, cmp)					\
@@ -98,6 +99,7 @@ void transmit_set(int, int);
 int statistics_clear(void);
 
 extern struct timespec currenttime;
+extern bool use_curses;
 
 #define DEBUG 1
 
