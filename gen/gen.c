@@ -1181,7 +1181,6 @@ interface_wait_linkupdown(const char *ifname, const int up, const int sec)
 	int i;
 
 	printf_verbose("%s: waiting link %s .", ifname, up ? "up" : "down");
-	DEBUGLOG("%s: waiting link %s .\n", ifname, up ? "up" : "down");
 	fflush(stdout);
 	for (i = sec * 2; i >= 0; i--) {
 		if (interface_is_active(ifname) == up)
@@ -1312,7 +1311,6 @@ interface_open(int ifno)
 	struct netmap_if *nifp;
 	struct netmap_ring *txring, *rxring;
 
-	DEBUGLOG("%s: called\n", __func__);
 	memset(&nmreq, 0, sizeof(nmreq));
 	sprintf(iface->netmapname, "netmap:%s", iface->ifname);
 
@@ -4363,19 +4361,16 @@ main(int argc, char *argv[])
 		usage();
 	}
 
-	DEBUGLOG("%s: interface_up(01)\n", __func__);
 	if (!opt_txonly)
 		interface_up(ifname[0]);	/* RX */
 	if (!opt_rxonly)
 		interface_up(ifname[1]);	/* TX */
 
-	DEBUGLOG("%s: wait_linkup(01)\n", __func__);
 	if (!opt_rxonly)
 		interface_wait_linkup(ifname[1]);	/* TX */
 	if (!opt_txonly)
 		interface_wait_linkup(ifname[0]);	/* RX */
 
-	DEBUGLOG("Set linkspeed\n");
 	for (i = 0; i < 2; i++) {
 		if (opt_txonly && i == 0)
 			continue;
@@ -4433,7 +4428,6 @@ main(int argc, char *argv[])
 		}
 	}
 
-	DEBUGLOG("Set default pps\n");
 	if (pps == -1) {
 		for (i = 0; i < 2; i++)
 			if (interface[i].maxlinkspeed == LINKSPEED_1GBPS)
@@ -4480,7 +4474,6 @@ main(int argc, char *argv[])
 		setpps(0, 0);
 		setpps(1, 0);
 	} else {
-		DEBUGLOG("Set pps to %d\n", pps);
 		setpps(0, pps);
 		setpps(1, pps);
 	}
@@ -4515,13 +4508,11 @@ main(int argc, char *argv[])
 	/*
 	 * configure adrlist
 	 */
-	DEBUGLOG("addrlist\n");
 	for (i = 0; i < 2; i++) {
 		interface[i].adrlist = addresslist_new();
 		addresslist_setlimit(interface[i].adrlist, MAXFLOWNUM);
 	}
 
-	DEBUGLOG("flowlist\n");
 	if (opt_flowlist != NULL) {
 		FILE *fh;
 		char *line;
@@ -4575,7 +4566,6 @@ main(int argc, char *argv[])
 	}
 	update_min_pktsize();
 
-	DEBUGLOG("addrlist_rebuild\n");
 	if (opt_flowsort) {
 		addresslist_rebuild(interface[1].adrlist);
 		addresslist_rebuild(interface[0].adrlist);
@@ -4615,7 +4605,6 @@ main(int argc, char *argv[])
 	/*
 	 * Initialize packet transmission infrastructure
 	 */
-	DEBUGLOG("%s: interface_open\n", __func__);
 	if (!opt_rxonly)
 		interface_open(1);	/* TX */
 	if (!opt_txonly)
@@ -4628,7 +4617,6 @@ main(int argc, char *argv[])
 		interface_wait_linkdown(ifname[1]);	/* TX */
 
 	/* Then, check interfaces up */
-	DEBUGLOG("%s: wait_linkup(01)\n", __func__);
 	if (!opt_rxonly)
 		interface_wait_linkup(ifname[1]);	/* TX */
 	if (!opt_txonly)
@@ -4716,7 +4704,6 @@ main(int argc, char *argv[])
 	}
 
 
-	DEBUGLOG("init template packet\n");
 	for (i = 0; i < 2; i++) {
 		ip4pkt_udp_template(pktbuffer_ipv4[PKTBUF_UDP][i], 1500 + ETHHDRSIZE);
 		build_template_packet_ipv4(i, pktbuffer_ipv4[PKTBUF_UDP][i]);
