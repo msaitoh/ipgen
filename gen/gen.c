@@ -138,6 +138,13 @@ u_int opt_nflow = 0;
 
 bool use_curses = true;
 
+/* Some time related parameters for RFC2544 tests in seconds . */
+#define RFC2544_WARMUP_SECS		3
+#define RFC2544_RESETTING_SECS		2
+#define RFC2544_INTERVAL_SECS_DEFAULT	0
+#define RFC2544_WARMING_SECS_DEFAULT	1
+#define RFC2544_TRIAL_SECS_DEFAULT	60	/* max trial duration of RFC2544_MEASURING */
+
 int use_ipv6 = 0;
 int verbose = 0;
 int opt_debuglevel = 0;
@@ -161,13 +168,13 @@ int opt_time = 0;
 int opt_fail_if_dropped = 0;
 int opt_rfc2544 = 0;
 double opt_rfc2544_tolerable_error_rate = 0.0;	/* default 0.00 % */
-int opt_rfc2544_trial_duration = 60;	/* default 60sec */
+int opt_rfc2544_trial_duration = RFC2544_TRIAL_SECS_DEFAULT;
 char *opt_rfc2544_pktsize;
 int opt_rfc2544_slowstart = 0;
 double opt_rfc2544_ppsresolution = 0.0;	/* default 0.00% */
 char *opt_rfc2544_output_json = NULL;
-int opt_rfc2544_interval = 0;
-int opt_rfc2544_warming_duration = 1;
+int opt_rfc2544_interval = RFC2544_INTERVAL_SECS_DEFAULT;
+int opt_rfc2544_warming_duration = RFC2544_WARMING_SECS_DEFAULT;
 int opt_rfc2544_early_finish = 1;
 
 #ifdef IPG_HACK
@@ -2932,7 +2939,7 @@ rfc2544_test(void)
 
 	case RFC2544_WARMUP0:
 		memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
-		statetime.tv_sec += 3;	/* wait 3sec */
+		statetime.tv_sec += RFC2544_WARMUP_SECS;
 		state = RFC2544_WARMUP;
 		break;
 	case RFC2544_WARMUP:
@@ -2961,7 +2968,7 @@ rfc2544_test(void)
 		work->curpps = work->maxup;
 
 		memcpy(&statetime, &currenttime_main, sizeof(struct timeval));
-		statetime.tv_sec += 2;	/* wait 2sec */
+		statetime.tv_sec += RFC2544_RESETTING_SECS;
 		state = RFC2544_RESETTING;
 		break;
 
