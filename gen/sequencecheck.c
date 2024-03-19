@@ -355,6 +355,7 @@ seqcheck_dump2(struct sequencechecker *sc)
 {
 	printf("nreceive   = %llu\n", (unsigned long long)sc->sc_nreceive);
 	printf("reorder    = %llu\n", (unsigned long long)sc->sc_reorder);
+	printf("duplicate  = %llu\n", (unsigned long long)sc->sc_duplicate);
 	printf("outofrange = %llu\n", (unsigned long long)sc->sc_outofrange);
 	printf("dropshift  = %llu\n", (unsigned long long)sc->sc_dropshift);
 	printf("drop       = %llu\n", (unsigned long long)seqcheck_dropcount(sc));
