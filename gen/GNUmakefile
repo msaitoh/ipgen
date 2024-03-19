@@ -43,7 +43,7 @@ cleandir: clean
 install:
 	install -o root -g wheel -m 550 ipgen ${PREFIX}/bin/
 
-sequencecheck: sequencecheck.c
+sequencecheck: sequencecheck.c seqcheck_test.c
 	$(CC) -o $@ sequencecheck.c $(CFLAGS) -DTEST
 
 test_sequencecheck: sequencecheck
