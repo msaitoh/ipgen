@@ -27,6 +27,13 @@ test1(void)
 	seqcheck_receive(&seqmap, 0);
 	seqcheck_receive(&seqmap, 4097);
 
+	/*
+	 * Seqno 0 and 4097 are received. From 1 to 4096 are not received. nreceived = 2.
+	 * Receiving 4097 makes seqno 0-63 out of range. baseidx becomes to 1.
+	 * Seqno 0 was received, so 1-63 are regarded as dropped.
+	 * The total drop count must be 63.
+	 */
+
 	seqcheck_dump(&seqmap);
 
 	return 0;
@@ -78,7 +85,7 @@ test4(void)
 
 	seqcheck_init(&seqmap);
 
-	seqcheck_receive(&seqmap, 16388);
+	seqcheck_receive(&seqmap, 16388); /* XXX SEQ_MAXBIT WAS 16384 now 4096 */
 	seqcheck_receive(&seqmap, 16387);
 	seqcheck_receive(&seqmap, 16386 + 128);
 
