@@ -128,16 +128,16 @@ seqcheck_clear(struct sequencechecker *sc)
 }
 
 static void
-seqcheck_init2(struct sequencechecker *sc, uint64_t seq)
+seqcheck_init2(struct sequencechecker *sc, uint64_t seq64)
 {
 	struct sequencechecker *parent;
 
 	parent = sc->sc_parent;	/* save */
 
 	memset(sc, 0, sizeof(*sc));
-	sc->sc_bitmap_start = seq;
+	sc->sc_bitmap_start = seq64;
 	sc->sc_bitmap_end = sc->sc_bitmap_start + SEQ_MAXBIT;
-	sc->sc_maxseq = seq;
+	sc->sc_maxseq = seq64;
 
 	sc->sc_parent = parent;	/* restore */
 }
@@ -201,16 +201,6 @@ seqcheck_receive(struct sequencechecker *sc, uint32_t seq)
 	uint64_t i, n, ndrop;
 	uint64_t nskip;
 
-	if (sc->sc_needinit) {
-		seqcheck_init2(sc, seq);
-		sc->sc_needinit = 0;
-	}
-
-	sc->sc_nreceive++;
-	if (sc->sc_parent)
-		sc->sc_parent->sc_nreceive++;
-
-
 	/* extend 32bit counter to 64bit counter internally */
 	uint32_t d = seq - sc->sc_lastseq;
 	if (d < 0x80000000) {
@@ -229,6 +219,17 @@ seqcheck_receive(struct sequencechecker *sc, uint32_t seq)
 		if (sc->sc_parent)
 			sc->sc_parent->sc_reorder++;
 	}
+
+	if (sc->sc_needinit) {
+		seqcheck_init2(sc, seq64);
+		sc->sc_needinit = 0;
+	}
+
+	sc->sc_nreceive++;
+	if (sc->sc_parent)
+		sc->sc_parent->sc_nreceive++;
+
+
 	sc->sc_lastseq = seq;
 
 	/*
