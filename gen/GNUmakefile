@@ -31,7 +31,7 @@ pktgen_item.c: pktgen.layout
 	perl layout_generator pktgen.layout
 
 depend: pktgen_item.c $(SRCS)
-	mkdep $(CFLAGS) $(SRCS)
+	$(MKDEP) $(CFLAGS) $(SRCS)
 
 clean: clean_test
 	rm -f pktgen_item.[ch]

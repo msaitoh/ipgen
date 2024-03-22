@@ -22,7 +22,7 @@ test: libaddrlist.a
 	cc test.c libaddrlist.a && ./a.out
 
 depend:
-	mkdep $(SRCS)
+	$(MKDEP) $(SRCS)
 
 clean:
 	rm -f $(TARGETLIB) $(OBJS)

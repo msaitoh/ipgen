@@ -31,7 +31,7 @@ $(TARGETLIB): $(OBJS)
 	$(AR) $(ARFLAGS) $@ $^
 
 depend:
-	mkdep $(SRCS)
+	$(MKDEP) $(SRCS)
 
 clean:
 	rm -f $(TARGETLIB) $(OBJS)
