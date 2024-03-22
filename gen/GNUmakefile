@@ -12,6 +12,11 @@ LDADD=		-L../libpkt -lpkt -L../libaddrlist -L/usr/local/lib -laddrlist -lpthread
 ifeq ($(shell uname),Linux)
 LDADD+=		-lbsd -lcrypto -lbpf
 CFLAGS+=	-DIPG_HACK -DUSE_AF_XDP
+HAS_XDP_XSK_H:=	$(wildcard /usr/include/xdp/xsk.h)
+ifdef HAS_XDP_XSK_H
+CFLAGS+=	-DHAS_XDP_XSK_H
+LDADD+=		-lxdp
+endif
 SRCS+=		arpresolv_linux.c af_xdp.c
 else
 CFLAGS+=	-DIPG_HACK -DUSE_NETMAP
