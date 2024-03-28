@@ -64,7 +64,7 @@ packets at once as much as possible.
 The behavior may be undesired for DUT.
 
 Modern network interfaces support packet pacing features, e.g., IPG and PAP.
-Unfortunately, the features are available on stock kernels and
+Unfortunately, the features are not available on stock kernels and
 you need to patch a used driver if you want to use the feature.
 
 The `patch/` directory contains some patches for the features.
