@@ -33,7 +33,11 @@
 #include <sys/resource.h>
 #include <linux/if_link.h>
 #include <bpf/bpf.h>
+#ifdef HAS_XDP_XSK_H
+#include <xdp/xsk.h>
+#else
 #include <bpf/xsk.h>
+#endif
 #include <bsd/sys/param.h>
 
 #include "af_xdp.h"
