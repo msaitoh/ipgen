@@ -49,6 +49,12 @@ test2(void)
 	seqcheck_receive(&seqmap, 0x78000000);
 	seqcheck_dump(&seqmap);
 
+	/*
+	 * Seqno 0x78000000 was received.
+	 * nreceive must be 1.
+	 * dropcount must be 2013265920. (currently broken).
+	 */
+
 	seqcheck_receive(&seqmap, 0x81000000);
 
 	seqcheck_dump(&seqmap);
