@@ -1,3 +1,5 @@
+static void seqcheck_testinit(const char *, struct sequencechecker *);
+
 static int test0(void);
 static int test1(void);
 static int test2(void);
@@ -5,13 +7,24 @@ static int test3(void);
 static int test4(void);
 static int test5(void);
 
+/*
+ * Print the banner with the function name and initialize seqmap.
+ * Must be called in the beginning of each test function.
+ */
+static void
+seqcheck_testinit(const char *funcname, struct sequencechecker *seqmapp)
+{
+
+	printf("====================== %s ======================\n", funcname);
+	seqcheck_init(seqmapp);
+}
 
 static int
 test0(void)
 {
 	struct sequencechecker seqmap;
 
-	seqcheck_init(&seqmap);
+	seqcheck_testinit(__func__, &seqmap);
 	seqcheck_dump(&seqmap);
 
 	return 0;
@@ -22,7 +35,7 @@ test1(void)
 {
 	struct sequencechecker seqmap;
 
-	seqcheck_init(&seqmap);
+	seqcheck_testinit(__func__, &seqmap);
 
 	seqcheck_receive(&seqmap, 0);
 	seqcheck_receive(&seqmap, 4097);
@@ -44,7 +57,7 @@ test2(void)
 {
 	struct sequencechecker seqmap;
 
-	seqcheck_init(&seqmap);
+	seqcheck_testinit(__func__, &seqmap);
 
 	seqcheck_receive(&seqmap, 0x78000000);
 	seqcheck_dump(&seqmap);
@@ -68,7 +81,7 @@ test3(void)
 	struct sequencechecker seqmap;
 	uint32_t i;
 
-	seqcheck_init(&seqmap);
+	seqcheck_testinit(__func__, &seqmap);
 
 	for (i = 0; i < 32; i++) {
 		seqcheck_receive(&seqmap, 0xfffffff0 + i);
@@ -89,7 +102,7 @@ test4(void)
 {
 	struct sequencechecker seqmap;
 
-	seqcheck_init(&seqmap);
+	seqcheck_testinit(__func__, &seqmap);
 
 	seqcheck_receive(&seqmap, 16388); /* XXX SEQ_MAXBIT WAS 16384 now 4096 */
 	seqcheck_receive(&seqmap, 16387);
@@ -105,7 +118,7 @@ test5(void)
 {
 	struct sequencechecker seqmap;
 
-	seqcheck_init(&seqmap);
+	seqcheck_testinit(__func__, &seqmap);
 
 	seqcheck_receive(&seqmap, 1);
 	seqcheck_receive(&seqmap, 2);
@@ -169,7 +182,6 @@ static int
 doeachtest(u_int i)
 {
 
-	printf("====================== test%u ======================\n", i);
 	return tests[i].func();
 }
 
