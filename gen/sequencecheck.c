@@ -351,6 +351,7 @@ seqcheck_outofrangecount(struct sequencechecker *sc)
 	return sc->sc_outofrange;
 }
 
+#if 1
 void
 seqcheck_dump2(struct sequencechecker *sc)
 {
@@ -400,6 +401,59 @@ seqcheck_dump(struct sequencechecker *sc)
 	}
 	printf("\n");
 }
+#else
+void
+seqcheck_dump2(struct sequencechecker *sc)
+{
+	DEBUGLOG("nreceive   = %llu\n", (unsigned long long)sc->sc_nreceive);
+	DEBUGLOG("reorder    = %llu\n", (unsigned long long)sc->sc_reorder);
+	DEBUGLOG("duplicate  = %llu\n", (unsigned long long)sc->sc_duplicate);
+	DEBUGLOG("outofrange = %llu\n", (unsigned long long)sc->sc_outofrange);
+	DEBUGLOG("dropshift  = %llu\n", (unsigned long long)sc->sc_dropshift);
+	DEBUGLOG("drop       = %llu\n", (unsigned long long)seqcheck_dropcount(sc));
+}
+
+void
+seqcheck_dump(struct sequencechecker *sc)
+{
+	unsigned int i, j, n;
+#ifdef DEBUG
+	uint64_t start, end;
+
+	start = sc->sc_bitmap_start;
+	end = sc->sc_bitmap_end;
+#endif
+
+	DEBUGLOG("lastseq    = 0x%llx\n", (unsigned long long)sc->sc_lastseq);
+	DEBUGLOG("seq_high   = 0x%llx\n", (unsigned long long)sc->sc_high);
+
+	DEBUGLOG("start      = 0x%llx\n", (unsigned long long)start);
+	DEBUGLOG("end        = 0x%llx\n", (unsigned long long)end);
+	DEBUGLOG("baseidx    = %llu\n", (unsigned long long)sc->sc_bitmap_baseidx);
+	DEBUGLOG("max seq    = 0x%llx\n", (unsigned long long)sc->sc_maxseq);
+	seqcheck_dump2(sc);
+
+	i = sc->sc_bitmap_baseidx;
+	for (n = 0; n < SEQ_ARRAYSIZE; n++) {
+		if ((n & 1) == 0)
+			DEBUGLOG("%10llu - %10llu: ",
+			    (unsigned long long)start + (n * BIT_PER_DATA),
+			    (unsigned long long)start + (n * BIT_PER_DATA) + BIT_PER_DATA * 2 - 1);
+
+		for (j = 0; j < BIT_PER_DATA; j++) {
+			DEBUGLOG_CONT("%d", (sc->sc_bitmap[i] & (1ULL << j)) ? 1 : 0);
+		}
+
+		if ((n & 1) == 1)
+			DEBUGLOG_CONT("\n");
+		else
+			DEBUGLOG_CONT(" ");
+
+		i = SEQ_NEXT_INDEX(i);
+	}
+	DEBUGLOG("\n");
+}
+#endif
 
 #ifdef TEST
 #include "seqcheck_test.c"
