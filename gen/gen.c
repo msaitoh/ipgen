@@ -128,7 +128,7 @@ static void rfc2544_showresult(void);
 static void rfc2544_showresult_json(char *);
 static void quit(int);
 
-char ipgen_version[] = "1.29";
+char ipgen_version[] = "1.30";
 
 #define DISPLAY_UPDATE_HZ	20
 #define DEFAULT_PPS_HZ		1000
