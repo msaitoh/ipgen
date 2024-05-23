@@ -2579,7 +2579,7 @@ struct rfc2544_work {
 	unsigned int minpps;
 	unsigned int maxpps;
 	unsigned int ppsresolution;
-	unsigned int limitpps;
+	unsigned int limitpps;		/* Theoretical MAX */
 	unsigned int curpps;
 	unsigned int prevpps;
 	unsigned int maxup;
@@ -2897,9 +2897,25 @@ rfc2544_up_pps(void)
 	struct rfc2544_work *work = &rfc2544_work[rfc2544_nthtest];
 	unsigned int nextpps;
 
-
-	if ((work->curpps + work->ppsresolution - 1) >= work->maxpps)
+	/* Theoretical MAX */
+	if (work->curpps == work->limitpps) {
+		DEBUGLOG("RFC2544: Theoretical MAX! (curpps=%d, limitpps=%d)\n", work->curpps, work->limitpps);
 		return 1;
+	}
+
+	if ((work->curpps + work->ppsresolution) > work->maxpps) {
+		if ((work->curpps + work->ppsresolution) >= work->limitpps) {
+			DEBUGLOG("RFC2544: New upperbound(%d) reached the theoretical MAX(%d). Try the theoretical MAX by ignoring the pps resolution\n",
+			    work->curpps + work->ppsresolution, work->limitpps);
+			work->prevpps = work->curpps;
+			work->minpps = work->curpps;
+			work->curpps = work->limitpps;
+			return 0;
+		}
+		DEBUGLOG("RFC2544: lower than pps resolution (curpps=%d, upperbound=%d, limitpps=%d)\n",
+		    work->curpps, work->curpps + work->ppsresolution, work->limitpps);
+		return 1;
+	}
 
 	work->prevpps = work->curpps;
 	work->minpps = work->curpps;
