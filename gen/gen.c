@@ -226,7 +226,7 @@ char bps_desc[32];
 #define CALC_L1 1
 #define CALC_L2 0
 
-#define	PKTSIZE2FRAMESIZE(x, gap)	(DEFAULT_PREAMBLE + (x) + FCS + (gap))
+#define	PKTSIZE2FRAMESIZE(pktsize, gap)	(DEFAULT_PREAMBLE + ETHHDRSIZE + (pktsize) + FCS + (gap))
 #define	_CALC_BPS(pktsize, pps, l1l2)											\
 	(((pktsize) + ETHHDRSIZE + FCS + (((l1l2) == CALC_L1) ? DEFAULT_PREAMBLE + DEFAULT_IFG : 0)) * (pps) * 8.0)
 #define	_CALC_MBPS(pktsize, pps, l1l2)			\
@@ -935,7 +935,7 @@ update_transmit_max_sustained_pps(int ifno, int ipg)
 	struct interface *iface = &interface[ifno];
 	uint32_t maxpps;
 
-	maxpps = iface->maxlinkspeed / 8 / PKTSIZE2FRAMESIZE(iface->pktsize + ETHHDRSIZE, ipg);
+	maxpps = iface->maxlinkspeed / 8 / PKTSIZE2FRAMESIZE(iface->pktsize, ipg);
 
 	if (iface->transmit_pps <= pps_hz)
 		maxpps = iface->transmit_pps;
@@ -969,7 +969,7 @@ calc_ipg(int ifno)
 		} else {
 			dev_tipg =
 			    ((iface->maxlinkspeed / 8) / iface->transmit_pps) -
-			    PKTSIZE2FRAMESIZE(iface->pktsize + ETHHDRSIZE, 0);
+			    PKTSIZE2FRAMESIZE(iface->pktsize, 0);
 		}
 		dev_tipg -= 4;	/* igb(4) NIC, ipg has offset 4 */
 		if (dev_tipg < 8)
@@ -990,7 +990,7 @@ calc_ipg(int ifno)
 		} else {
 			dev_tipg =
 			    ((iface->maxlinkspeed / 8) / iface->transmit_pps) -
-			    PKTSIZE2FRAMESIZE(iface->pktsize + ETHHDRSIZE, 0);
+			    PKTSIZE2FRAMESIZE(iface->pktsize, 0);
 		}
 		if (dev_tipg < 5)
 			dev_tipg = 5;
@@ -1010,7 +1010,7 @@ calc_ipg(int ifno)
 		if (iface->transmit_pps == 0) {
 			bps = 0;
 		} else {
-			bps = PKTSIZE2FRAMESIZE(iface->pktsize + ETHHDRSIZE, DEFAULT_IFG) * iface->transmit_pps * 8;
+			bps = PKTSIZE2FRAMESIZE(iface->pktsize, DEFAULT_IFG) * iface->transmit_pps * 8;
 		}
 		/*  / 1000 / 1000; */
 
