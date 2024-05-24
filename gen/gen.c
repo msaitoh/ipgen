@@ -102,7 +102,7 @@
 #define	DEFAULT_IFG		12	/* Inter Packet Gap */
 #define	DEFAULT_PREAMBLE	(7 + 1)	/* preamble + SFD */
 #define	FCS			4
-#define	ETHHDRSIZE		sizeof(struct ether_header)
+#define	ETHHDRSIZE		((unsigned int)sizeof(struct ether_header))
 
 #define	PORT_DEFAULT		9	/* discard port */
 #define MAXFLOWNUM		(1024 * 1024)
@@ -228,7 +228,7 @@ char bps_desc[32];
 
 #define	PKTSIZE2FRAMESIZE(pktsize, gap)	(DEFAULT_PREAMBLE + ETHHDRSIZE + (pktsize) + FCS + (gap))
 #define	_CALC_BPS(pktsize, pps, l1l2)											\
-	(((pktsize) + ETHHDRSIZE + FCS + (((l1l2) == CALC_L1) ? DEFAULT_PREAMBLE + DEFAULT_IFG : 0)) * (pps) * 8.0)
+	((ETHHDRSIZE + (pktsize) + FCS + (((l1l2) == CALC_L1) ? DEFAULT_PREAMBLE + DEFAULT_IFG : 0)) * (pps) * 8.0)
 #define	_CALC_MBPS(pktsize, pps, l1l2)			\
 	(_CALC_BPS(pktsize, pps, l1l2) / 1000.0 / 1000.0)
 
@@ -1614,7 +1614,7 @@ receive_packet(int ifno, struct timespec *curtime, char *buf, uint16_t len)
 
 	ifstats->rx++;
 	if (opt_bps_include_preamble)
-		ifstats->rx_byte += len + DEFAULT_IFG + DEFAULT_PREAMBLE + FCS;
+		ifstats->rx_byte += DEFAULT_IFG + DEFAULT_PREAMBLE + len + FCS;
 	else
 		ifstats->rx_byte += len + FCS;
 
@@ -1887,7 +1887,7 @@ interface_transmit(int ifno)
 			txring->slot[cur].flags = 0;
 
 			if (opt_bps_include_preamble)
-				ifstats->tx_byte += txring->slot[cur].len + DEFAULT_IFG + DEFAULT_PREAMBLE + FCS;
+				ifstats->tx_byte += DEFAULT_IFG + DEFAULT_PREAMBLE + txring->slot[cur].len + FCS;
 			else
 				ifstats->tx_byte += txring->slot[cur].len + FCS;
 			ifstats->tx++;
@@ -1918,7 +1918,7 @@ interface_transmit(int ifno)
 		if (sentpkttype < 0)
 			break;
 		if (opt_bps_include_preamble)
-			ifstats->tx_byte += *lenp + DEFAULT_IFG + DEFAULT_PREAMBLE + FCS;
+			ifstats->tx_byte += DEFAULT_IFG + DEFAULT_PREAMBLE + *lenp + FCS;
 		else
 			ifstats->tx_byte += *lenp + FCS;
 		ifstats->tx++;
@@ -2624,7 +2624,7 @@ rfc2544_add_test(uint64_t maxlinkspeed, unsigned int pktsize)
 
 	work->pktsize = pktsize;
 	work->minpps = 1;
-	work->maxpps = maxlinkspeed / 8 / (pktsize + ETHHDRSIZE + FCS + DEFAULT_IFG + DEFAULT_PREAMBLE);
+	work->maxpps = maxlinkspeed / 8 / (DEFAULT_PREAMBLE + ETHHDRSIZE + pktsize + FCS + DEFAULT_IFG);
 	rfc2544_ntest++;
 }
 
@@ -2647,7 +2647,7 @@ rfc2544_calc_param(uint64_t maxlinkspeed)
 	u_int i;
 
 	for (i = 0; i < rfc2544_ntest; i++) {
-		rfc2544_work[i].maxpps = maxlinkspeed / 8 / (rfc2544_work[i].pktsize + ETHHDRSIZE + FCS + DEFAULT_IFG + DEFAULT_PREAMBLE);
+		rfc2544_work[i].maxpps = maxlinkspeed / 8 / (DEFAULT_PREAMBLE + ETHHDRSIZE + rfc2544_work[i].pktsize + FCS + DEFAULT_IFG);
 	}
 }
 
@@ -2747,7 +2747,7 @@ rfc2544_showresult(void)
 
 	for (i = 0; i < rfc2544_ntest; i++) {
 		struct rfc2544_work *work = &rfc2544_work[i];
-		printf("%8u |", work->pktsize + ETHHDRSIZE + FCS);
+		printf("%8u |", ETHHDRSIZE + work->pktsize + FCS);
 
 		mbps = calc_mbps(work->pktsize, work->curpps);
 		for (j = 0; j < mbps / 20 / linkspeed; j++)
@@ -2777,7 +2777,7 @@ rfc2544_showresult(void)
 	for (i = 0; i < rfc2544_ntest; i++) {
 		struct rfc2544_work *work = &rfc2544_work[i];
 
-		printf("%8u |", work->pktsize + ETHHDRSIZE + FCS);
+		printf("%8u |", ETHHDRSIZE + work->pktsize + FCS);
 
 		pps = work->curpps;
 		for (j = 0; j < pps / 20000 / linkspeed; j++)
