@@ -172,19 +172,20 @@ genscript_read(struct genscript *genscript, const char *path)
 			continue;
 		}
 
-#define PKTSIZE2FRAMESIZE(x)	((x) + 12 /*IFG*/ + 8 /*PREAMBLE+SFD*/ + 4 /*FCS*/)
+#define	DEFAULT_IFG		12	/* Inter Packet Gap */
+#define PKTSIZE2FRAMESIZE(pktsize, gap)	(8 /*PREAMBLE+SFD*/ + 14 /*ETHHDRSIZE*/ + (pktsize) + 4 /*FCS*/ + (gap))
 		if ((q = strcasestr(wbuf, "gbps")) != NULL && strlen(q) == 4) {
 			bps = strtoull(wbuf, NULL, 10);
-			pps = bps * 1000000000ULL / 8 / PKTSIZE2FRAMESIZE(pktsize + 14);
+			pps = bps * 1000000000ULL / 8 / PKTSIZE2FRAMESIZE(pktsize, DEFAULT_IFG);
 		} else if ((q = strcasestr(wbuf, "mbps")) != NULL && strlen(q) == 4) {
 			bps = strtoull(wbuf, NULL, 10);
-			pps = bps * 1000000ULL / 8 / PKTSIZE2FRAMESIZE(pktsize + 14);
+			pps = bps * 1000000ULL / 8 / PKTSIZE2FRAMESIZE(pktsize, DEFAULT_IFG);
 		} else if ((q = strcasestr(wbuf, "kbps")) != NULL && strlen(q) == 4) {
 			bps = strtoull(wbuf, NULL, 10);
-			pps = bps * 1000ULL / 8 / PKTSIZE2FRAMESIZE(pktsize + 14);
+			pps = bps * 1000ULL / 8 / PKTSIZE2FRAMESIZE(pktsize, DEFAULT_IFG);
 		} else if ((q = strcasestr(wbuf, "bps")) != NULL && strlen(q) == 3) {
 			bps = strtoull(wbuf, NULL, 10);
-			pps = bps / 8ULL / PKTSIZE2FRAMESIZE(pktsize + 14);
+			pps = bps / 8ULL / PKTSIZE2FRAMESIZE(pktsize, DEFAULT_IFG);
 		} else {
 			pps = strtoul(wbuf, NULL, 10);
 		}
