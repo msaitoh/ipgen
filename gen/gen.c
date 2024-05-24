@@ -2624,7 +2624,7 @@ rfc2544_add_test(uint64_t maxlinkspeed, unsigned int pktsize)
 
 	work->pktsize = pktsize;
 	work->minpps = 1;
-	work->maxpps = maxlinkspeed / 8 / (pktsize + 18 + DEFAULT_IFG + DEFAULT_PREAMBLE);
+	work->maxpps = maxlinkspeed / 8 / (pktsize + ETHHDRSIZE + FCS + DEFAULT_IFG + DEFAULT_PREAMBLE);
 	rfc2544_ntest++;
 }
 
@@ -2647,7 +2647,7 @@ rfc2544_calc_param(uint64_t maxlinkspeed)
 	u_int i;
 
 	for (i = 0; i < rfc2544_ntest; i++) {
-		rfc2544_work[i].maxpps = maxlinkspeed / 8 / (rfc2544_work[i].pktsize + 18 + DEFAULT_IFG + DEFAULT_PREAMBLE);
+		rfc2544_work[i].maxpps = maxlinkspeed / 8 / (rfc2544_work[i].pktsize + ETHHDRSIZE + FCS + DEFAULT_IFG + DEFAULT_PREAMBLE);
 	}
 }
 
@@ -2747,7 +2747,7 @@ rfc2544_showresult(void)
 
 	for (i = 0; i < rfc2544_ntest; i++) {
 		struct rfc2544_work *work = &rfc2544_work[i];
-		printf("%8u |", work->pktsize + 18);
+		printf("%8u |", work->pktsize + ETHHDRSIZE + FCS);
 
 		mbps = calc_mbps(work->pktsize, work->curpps);
 		for (j = 0; j < mbps / 20 / linkspeed; j++)
@@ -2777,7 +2777,7 @@ rfc2544_showresult(void)
 	for (i = 0; i < rfc2544_ntest; i++) {
 		struct rfc2544_work *work = &rfc2544_work[i];
 
-		printf("%8u |", work->pktsize + 18);
+		printf("%8u |", work->pktsize + ETHHDRSIZE + FCS);
 
 		pps = work->curpps;
 		for (j = 0; j < pps / 20000 / linkspeed; j++)
