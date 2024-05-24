@@ -99,11 +99,6 @@
 #define	LINKSPEED_10GBPS	10000000000ULL
 #define	LINKSPEED_100GBPS	100000000000ULL
 
-#define	DEFAULT_IFG		12	/* Inter Packet Gap */
-#define	DEFAULT_PREAMBLE	(7 + 1)	/* preamble + SFD */
-#define	FCS			4
-#define	ETHHDRSIZE		((unsigned int)sizeof(struct ether_header))
-
 #define	PORT_DEFAULT		9	/* discard port */
 #define MAXFLOWNUM		(1024 * 1024)
 
@@ -225,6 +220,11 @@ char bps_desc[32];
 
 #define CALC_L1 1
 #define CALC_L2 0
+
+#define	DEFAULT_IFG		12	/* Inter Packet Gap */
+#define	DEFAULT_PREAMBLE	(7 + 1)	/* preamble + SFD */
+#define	FCS			4
+#define	ETHHDRSIZE		((unsigned int)sizeof(struct ether_header))
 
 #define	PKTSIZE2FRAMESIZE(pktsize)		(ETHHDRSIZE + (pktsize) + FCS)
 #define	PKTSIZE2FRAMESIZE_L1(pktsize, gap)	(DEFAULT_PREAMBLE + PKTSIZE2FRAMESIZE(pktsize) + (gap))
