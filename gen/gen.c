@@ -226,9 +226,10 @@ char bps_desc[32];
 #define CALC_L1 1
 #define CALC_L2 0
 
-#define	PKTSIZE2FRAMESIZE_L1(pktsize, gap)	(DEFAULT_PREAMBLE + ETHHDRSIZE + (pktsize) + FCS + (gap))
+#define	PKTSIZE2FRAMESIZE(pktsize)		(ETHHDRSIZE + (pktsize) + FCS)
+#define	PKTSIZE2FRAMESIZE_L1(pktsize, gap)	(DEFAULT_PREAMBLE + PKTSIZE2FRAMESIZE(pktsize) + (gap))
 #define	_CALC_BPS(pktsize, pps, l1l2)											\
-	((ETHHDRSIZE + (pktsize) + FCS + (((l1l2) == CALC_L1) ? DEFAULT_PREAMBLE + DEFAULT_IFG : 0)) * (pps) * 8.0)
+	((PKTSIZE2FRAMESIZE(pktsize) + (((l1l2) == CALC_L1) ? DEFAULT_PREAMBLE + DEFAULT_IFG : 0)) * (pps) * 8.0)
 #define	_CALC_MBPS(pktsize, pps, l1l2)			\
 	(_CALC_BPS(pktsize, pps, l1l2) / 1000.0 / 1000.0)
 
@@ -2747,7 +2748,7 @@ rfc2544_showresult(void)
 
 	for (i = 0; i < rfc2544_ntest; i++) {
 		struct rfc2544_work *work = &rfc2544_work[i];
-		printf("%8u |", ETHHDRSIZE + work->pktsize + FCS);
+		printf("%8u |", PKTSIZE2FRAMESIZE(work->pktsize));
 
 		mbps = calc_mbps(work->pktsize, work->curpps);
 		for (j = 0; j < mbps / 20 / linkspeed; j++)
@@ -2777,7 +2778,7 @@ rfc2544_showresult(void)
 	for (i = 0; i < rfc2544_ntest; i++) {
 		struct rfc2544_work *work = &rfc2544_work[i];
 
-		printf("%8u |", ETHHDRSIZE + work->pktsize + FCS);
+		printf("%8u |", PKTSIZE2FRAMESIZE(work->pktsize));
 
 		pps = work->curpps;
 		for (j = 0; j < pps / 20000 / linkspeed; j++)
