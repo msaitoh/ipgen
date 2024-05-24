@@ -2624,7 +2624,7 @@ rfc2544_add_test(uint64_t maxlinkspeed, unsigned int pktsize)
 
 	work->pktsize = pktsize;
 	work->minpps = 1;
-	work->maxpps = maxlinkspeed / 8 / (DEFAULT_PREAMBLE + ETHHDRSIZE + pktsize + FCS + DEFAULT_IFG);
+	work->maxpps = maxlinkspeed / 8 / PKTSIZE2FRAMESIZE(pktsize, DEFAULT_IFG);
 	rfc2544_ntest++;
 }
 
@@ -2647,7 +2647,7 @@ rfc2544_calc_param(uint64_t maxlinkspeed)
 	u_int i;
 
 	for (i = 0; i < rfc2544_ntest; i++) {
-		rfc2544_work[i].maxpps = maxlinkspeed / 8 / (DEFAULT_PREAMBLE + ETHHDRSIZE + rfc2544_work[i].pktsize + FCS + DEFAULT_IFG);
+		rfc2544_work[i].maxpps = maxlinkspeed / 8 / PKTSIZE2FRAMESIZE(rfc2544_work[i].pktsize, DEFAULT_IFG);
 	}
 }
 
