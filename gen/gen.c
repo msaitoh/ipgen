@@ -226,7 +226,7 @@ char bps_desc[32];
 #define CALC_L1 1
 #define CALC_L2 0
 
-#define	PKTSIZE2FRAMESIZE(pktsize, gap)	(DEFAULT_PREAMBLE + ETHHDRSIZE + (pktsize) + FCS + (gap))
+#define	PKTSIZE2FRAMESIZE_L1(pktsize, gap)	(DEFAULT_PREAMBLE + ETHHDRSIZE + (pktsize) + FCS + (gap))
 #define	_CALC_BPS(pktsize, pps, l1l2)											\
 	((ETHHDRSIZE + (pktsize) + FCS + (((l1l2) == CALC_L1) ? DEFAULT_PREAMBLE + DEFAULT_IFG : 0)) * (pps) * 8.0)
 #define	_CALC_MBPS(pktsize, pps, l1l2)			\
@@ -935,7 +935,7 @@ update_transmit_max_sustained_pps(int ifno, int ipg)
 	struct interface *iface = &interface[ifno];
 	uint32_t maxpps;
 
-	maxpps = iface->maxlinkspeed / 8 / PKTSIZE2FRAMESIZE(iface->pktsize, ipg);
+	maxpps = iface->maxlinkspeed / 8 / PKTSIZE2FRAMESIZE_L1(iface->pktsize, ipg);
 
 	if (iface->transmit_pps <= pps_hz)
 		maxpps = iface->transmit_pps;
@@ -969,7 +969,7 @@ calc_ipg(int ifno)
 		} else {
 			dev_tipg =
 			    ((iface->maxlinkspeed / 8) / iface->transmit_pps) -
-			    PKTSIZE2FRAMESIZE(iface->pktsize, 0);
+			    PKTSIZE2FRAMESIZE_L1(iface->pktsize, 0);
 		}
 		dev_tipg -= 4;	/* igb(4) NIC, ipg has offset 4 */
 		if (dev_tipg < 8)
@@ -990,7 +990,7 @@ calc_ipg(int ifno)
 		} else {
 			dev_tipg =
 			    ((iface->maxlinkspeed / 8) / iface->transmit_pps) -
-			    PKTSIZE2FRAMESIZE(iface->pktsize, 0);
+			    PKTSIZE2FRAMESIZE_L1(iface->pktsize, 0);
 		}
 		if (dev_tipg < 5)
 			dev_tipg = 5;
@@ -1010,7 +1010,7 @@ calc_ipg(int ifno)
 		if (iface->transmit_pps == 0) {
 			bps = 0;
 		} else {
-			bps = PKTSIZE2FRAMESIZE(iface->pktsize, DEFAULT_IFG) * iface->transmit_pps * 8;
+			bps = PKTSIZE2FRAMESIZE_L1(iface->pktsize, DEFAULT_IFG) * iface->transmit_pps * 8;
 		}
 		/*  / 1000 / 1000; */
 
@@ -2624,7 +2624,7 @@ rfc2544_add_test(uint64_t maxlinkspeed, unsigned int pktsize)
 
 	work->pktsize = pktsize;
 	work->minpps = 1;
-	work->maxpps = maxlinkspeed / 8 / PKTSIZE2FRAMESIZE(pktsize, DEFAULT_IFG);
+	work->maxpps = maxlinkspeed / 8 / PKTSIZE2FRAMESIZE_L1(pktsize, DEFAULT_IFG);
 	rfc2544_ntest++;
 }
 
@@ -2647,7 +2647,7 @@ rfc2544_calc_param(uint64_t maxlinkspeed)
 	u_int i;
 
 	for (i = 0; i < rfc2544_ntest; i++) {
-		rfc2544_work[i].maxpps = maxlinkspeed / 8 / PKTSIZE2FRAMESIZE(rfc2544_work[i].pktsize, DEFAULT_IFG);
+		rfc2544_work[i].maxpps = maxlinkspeed / 8 / PKTSIZE2FRAMESIZE_L1(rfc2544_work[i].pktsize, DEFAULT_IFG);
 	}
 }
 
